@@ -862,6 +862,29 @@ main { width: 100%; max-width: 400px; }
 .swatch[data-theme="berry"]   { background: conic-gradient(from 45deg, #f5e9ee 0 33%, #b5324f 33% 66%, #6a4c93 66% 100%); }
 .swatch[data-theme="ocean"]   { background: conic-gradient(from 45deg, #e8eef3 0 33%, #d9762b 33% 66%, #2470a0 66% 100%); }
 
+/* ------------------------------------------------ videos
+   Rated exactly like songs, kept in their own file, never shared. The styling
+   says "same shelf, different drawer" rather than treating them as lesser. */
+.kind-line {
+  font-family: "Caveat", cursive;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--soft);
+  margin-top: 5px;
+}
+/* the vinyl makes no sense for a video, so it stays tucked in */
+.now-card.is-video .vinyl { display: none; }
+
+.shelf-heading {
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: var(--soft);
+  text-align: center;
+  margin-bottom: 10px;
+}
+.video-card .album-cover.placeholder { color: var(--soft); }
+.video-card .avg-badge { background: var(--soft); }
+
 /* ------------------------------------------------ skins + listening */
 .skin-swatches { display: flex; gap: 8px; justify-content: center; margin-bottom: 6px; }
 .skinbtn {

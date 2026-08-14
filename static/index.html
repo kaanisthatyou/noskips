@@ -55,6 +55,7 @@
         <h2 id="t-title">—</h2>
         <p id="t-artist" class="artist">—</p>
         <p id="t-album" class="album">—</p>
+        <p id="kind-line" class="kind-line" hidden></p>
         <p id="shared-line" class="shared-line" hidden></p>
       </div>
 
@@ -106,8 +107,8 @@
     </div>
 
     <div class="card empty-card" id="now-empty">
-      <p class="empty-big" data-i18n="empty_now_big">nothing spinning</p>
-      <p class="empty-small" data-i18n="empty_now_small">put a record on in spotify &amp; it shows up here ♪</p>
+      <p class="empty-big" id="empty-big" data-i18n="empty_now_big">nothing spinning</p>
+      <p class="empty-small" id="empty-small" data-i18n="empty_now_small">put a record on in spotify &amp; it shows up here ♪</p>
     </div>
 
   </section>
@@ -115,6 +116,15 @@
   <!-- ================ SHELF ================ -->
   <section id="view-shelf" hidden>
     <div id="shelf-grid" class="shelf-grid"></div>
+
+    <!-- videos keep their own shelf: rated the same way, stored separately,
+         never shared -->
+    <div id="videos-block" hidden>
+      <div class="tear"></div>
+      <p class="shelf-heading" data-i18n="shelf_videos_label">videos · kept on this pc</p>
+      <div id="videos-grid" class="shelf-grid"></div>
+    </div>
+
     <div class="card empty-card" id="shelf-empty" hidden>
       <p class="empty-big" data-i18n="shelf_empty_big">bare shelves</p>
       <p class="empty-small" data-i18n="shelf_empty_small">no verdicts yet — go judge something</p>

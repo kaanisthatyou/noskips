@@ -45,6 +45,9 @@ const I18N = {
     settings_theme_label: "color theme",
     settings_account_label: "account",
     settings_skin_label: "tucked-away look",
+    kind_video: "a video — this one stays on this pc",
+    shelf_videos_label: "videos · kept on this pc",
+    videos_rated: "{count} video(s) rated",
     listen_on: "listening", listen_off: "listen to the sound",
     listen_hint: "reads what your speakers are playing, so the bars are real and every stamp keeps a trace of the moment. off by default.",
     priv_public: "shared", priv_public_off: "private",
@@ -87,6 +90,9 @@ const I18N = {
     settings_theme_label: "renk teması",
     settings_account_label: "hesap",
     settings_skin_label: "gizli görünüm",
+    kind_video: "video — bu bilgisayarda kalır",
+    shelf_videos_label: "videolar · bu bilgisayarda",
+    videos_rated: "{count} video puanlandı",
     listen_on: "dinliyor", listen_off: "sesi dinle",
     listen_hint: "hoparlörden çıkanı okur; çubuklar gerçek olur ve her damga o anın izini saklar. varsayılan olarak kapalı.",
     priv_public: "paylaşımda", priv_public_off: "gizli",
@@ -129,6 +135,9 @@ const I18N = {
     settings_theme_label: "tema de color",
     settings_account_label: "cuenta",
     settings_skin_label: "aspecto recogido",
+    kind_video: "un vídeo — este se queda en este pc",
+    shelf_videos_label: "vídeos · guardados en este pc",
+    videos_rated: "{count} vídeo(s) calificado(s)",
     listen_on: "escuchando", listen_off: "escuchar el sonido",
     listen_hint: "lee lo que suena en tus altavoces, así las barras son reales y cada sello guarda un rastro del momento. desactivado por defecto.",
     priv_public: "compartido", priv_public_off: "privado",
@@ -171,6 +180,9 @@ const I18N = {
     settings_theme_label: "カラーテーマ",
     settings_account_label: "アカウント",
     settings_skin_label: "折りたたみ時の見た目",
+    kind_video: "動画 — これはこのPCに残ります",
+    shelf_videos_label: "動画・このPCに保存",
+    videos_rated: "{count}本の動画を評価済み",
     listen_on: "聴いています", listen_off: "音を聴く",
     listen_hint: "スピーカーの音を読み取ります。バーが本物になり、評価にはその瞬間の波形が残ります。既定はオフです。",
     priv_public: "共有中", priv_public_off: "非公開",
@@ -213,6 +225,9 @@ const I18N = {
     settings_theme_label: "配色主题",
     settings_account_label: "账号",
     settings_skin_label: "收起时的样子",
+    kind_video: "视频 — 这条只留在本机",
+    shelf_videos_label: "视频 · 保存在本机",
+    videos_rated: "已评{count}个视频",
     listen_on: "正在聆听", listen_off: "聆听声音",
     listen_hint: "读取扬声器正在播放的声音，让波形是真实的，并为每次盖章留下当时的痕迹。默认关闭。",
     priv_public: "已共享", priv_public_off: "私密",
@@ -677,6 +692,7 @@ $("save").addEventListener("click", async () => {
         note: $("note").value,
         public: priv.public,
         notePublic: priv.notePublic,
+        kind: now.kind,
       }),
     });
     const out = await res.json();
@@ -772,6 +788,7 @@ function renderNow() {
     cover.src = want;
   }
 
+  renderKind();
   renderShared();
 
   $("vinyl").classList.toggle("out", now.playing);
@@ -781,6 +798,27 @@ function renderNow() {
   $("icon-pause").style.display = now.playing ? "" : "none";
 
   syncClock();
+}
+
+// videos are rated exactly like songs — this just says where the verdict will
+// land, so nobody is surprised that it didn't reach their profile
+function renderKind() {
+  const el = $("kind-line");
+  const isVideo = now && now.kind === "video";
+  const card = $("now-card");
+  card.classList.toggle("is-video", !!isVideo);
+  if (!isVideo) {
+    if (!el.hidden) {
+      el.hidden = true;
+      fitWindow();
+    }
+    return;
+  }
+  const wasHidden = el.hidden;
+  el.hidden = false;
+  const text = t("kind_video");
+  if (el.textContent !== text) el.textContent = text;
+  if (wasHidden) fitWindow();
 }
 
 // what everyone else made of this track. absent until sync is on and the
@@ -854,42 +892,58 @@ function drawProgress() {
 requestAnimationFrame(drawProgress);
 
 // ---------------------------------------------------------------- shelf ----
+function albumCard(a) {
+  const video = a.kind === "video";
+  const card = document.createElement("div");
+  card.className = `album-card${video ? " video-card" : ""}`;
+  card.innerHTML = `
+    <div class="album-cover-wrap">
+      <span class="avg-badge">${prettyAvg(a.avg)}</span>
+      ${
+        a.cover
+          ? `<img class="album-cover" src="${a.cover}" alt="" loading="lazy">`
+          : `<div class="album-cover placeholder">${video ? "▶" : "♪"}</div>`
+      }
+    </div>
+    <p class="album-name"></p>
+    <p class="album-artist"></p>
+    <p class="album-count"></p>`;
+  // a video has no album, so its channel carries the card instead
+  card.querySelector(".album-name").textContent =
+    a.album || (video ? a.artist : t("single_album"));
+  card.querySelector(".album-artist").textContent = video && !a.album ? "" : a.artist;
+  card.querySelector(".album-count").textContent = t(
+    video ? "videos_rated" : "tracks_rated",
+    { count: a.count }
+  );
+  card.addEventListener("click", () => toggleTracks(card, a));
+  return card;
+}
+
+function fillGrid(grid, albums) {
+  grid.innerHTML = "";
+  albums.forEach((a) => grid.appendChild(albumCard(a)));
+}
+
 async function loadShelf() {
   shelfDirty = false;
   const res = await fetch("/api/library");
-  const { albums } = await res.json();
-  const grid = $("shelf-grid");
-  grid.innerHTML = "";
-  $("shelf-empty").hidden = albums.length > 0;
+  const { albums, videos = [] } = await res.json();
 
-  albums.forEach((a) => {
-    const card = document.createElement("div");
-    card.className = "album-card";
-    card.innerHTML = `
-      <div class="album-cover-wrap">
-        <span class="avg-badge">${prettyAvg(a.avg)}</span>
-        ${
-          a.cover
-            ? `<img class="album-cover" src="${a.cover}" alt="" loading="lazy">`
-            : `<div class="album-cover placeholder">♪</div>`
-        }
-      </div>
-      <p class="album-name"></p>
-      <p class="album-artist"></p>
-      <p class="album-count"></p>`;
-    card.querySelector(".album-name").textContent = a.album || t("single_album");
-    card.querySelector(".album-artist").textContent = a.artist;
-    card.querySelector(".album-count").textContent = t("tracks_rated", { count: a.count });
-    card.addEventListener("click", () => toggleTracks(card, a));
-    grid.appendChild(card);
-  });
+  fillGrid($("shelf-grid"), albums);
+  fillGrid($("videos-grid"), videos);
+  // the videos shelf only exists once there's something on it
+  $("videos-block").hidden = videos.length === 0;
+  $("shelf-empty").hidden = albums.length > 0 || videos.length > 0;
+
   fitWindow();
 }
 
 let openPanel = null;
 function toggleTracks(card, a) {
   if (openPanel) {
-    const wasThis = openPanel.dataset.for === `${a.artist}:::${a.album}`;
+    // the kind is part of the identity: a song and a video can share a name
+    const wasThis = openPanel.dataset.for === `${a.kind}:::${a.artist}:::${a.album}`;
     openPanel.remove();
     openPanel = null;
     if (wasThis) {
@@ -899,7 +953,7 @@ function toggleTracks(card, a) {
   }
   const panel = document.createElement("div");
   panel.className = "album-tracks";
-  panel.dataset.for = `${a.artist}:::${a.album}`;
+  panel.dataset.for = `${a.kind}:::${a.artist}:::${a.album}`;
   panel.innerHTML = `<h3></h3><p class="sub"></p>`;
   panel.querySelector("h3").textContent = a.album || t("single_album");
   panel.querySelector(".sub").textContent = t("album_avg_line", { artist: a.artist, avg: prettyAvg(a.avg) });
@@ -919,7 +973,12 @@ function toggleTracks(card, a) {
       await fetch("/api/rate", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ artist: a.artist, album: a.album, title: trk.title }),
+        body: JSON.stringify({
+          artist: a.artist,
+          album: a.album,
+          title: trk.title,
+          kind: a.kind,
+        }),
       });
       shelfDirty = true;
       trackKey = ""; // force the now-view to reload saved state

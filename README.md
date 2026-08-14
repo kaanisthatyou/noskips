@@ -30,7 +30,12 @@ verdict on every song — typewriter, handwriting, washi tape and all.
 - **The shelf** — everything grouped by album with the real cover art and the
   album average (plain mean of its rated tracks).
 - **Honest storage** — one human-readable `data/ratings.json`, covers cached
-  as plain images in `covers/`. Grep it, back it up, take it with you.
+  as plain images in `covers/`. Grep it, back it up, take it with you. Set
+  `NOSKIPS_DATA_DIR` if you'd rather keep the library somewhere else.
+- **Songs and videos, filed separately** — Windows says whether what's playing
+  is music or a video, so a YouTube clip gets rated exactly like a song but
+  lands in `data/videos.json` and its own shelf. Videos never leave your
+  machine: the sync engine is only ever handed the music store.
 - **Speaks your language** — English, Türkçe, Español, 日本語, 中文, switchable
   from the gear icon.
 - **Color themes** — classic, noir, mint, berry, ocean — same hand-stamped
@@ -53,7 +58,7 @@ page with your name on it.
 
 - **Nothing leaves your machine until you sign in and switch sync on** — not
   even the lookup that asks what other people thought, because asking tells the
-  server what you're playing. Covers never leave at all.
+  server what you're playing. Covers never leave at all, and neither do videos.
 - **Offline-first.** Rating writes to your local JSON and queues; the network
   happens later, on its own thread. The button never waits.
 - **First press** — if nobody in the world has ever rated the track you're on,

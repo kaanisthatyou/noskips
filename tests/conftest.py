@@ -1,6 +1,24 @@
+import os
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+
+
+@pytest.fixture(scope="session", autouse=True)
+def never_touch_the_real_library(tmp_path_factory):
+    """Point the widget's data directory at a throwaway folder, for every test.
+
+    Belt and braces on top of each fixture's own isolation. Importing app.py
+    creates and writes to whatever DATA_DIR resolves to, and the default is the
+    library sitting next to the source — so a test that merely imports the
+    module can quietly add rows to somebody's real shelf. That happened once;
+    this makes it impossible to happen twice.
+    """
+    root = tmp_path_factory.mktemp("widget-data")
+    os.environ.setdefault("NOSKIPS_DATA_DIR", str(root / "data"))
+    os.environ.setdefault("NOSKIPS_COVERS_DIR", str(root / "covers"))
+    yield
 
 from server import db as database
 from server.emailer import ConsoleSender

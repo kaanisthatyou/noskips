@@ -20,6 +20,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
 
+import media_kind
 from audio import Visualizer, procedural_bands
 from sync import SyncEngine
 
@@ -33,11 +34,20 @@ from winrt.windows.storage.streams import Buffer, InputStreamOptions
 FROZEN = getattr(sys, "frozen", False)
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
 ROOT = Path(sys.executable).parent if FROZEN else Path(__file__).parent
-DATA_DIR = ROOT / "data"
-COVERS_DIR = ROOT / "covers"
-DATA_DIR.mkdir(exist_ok=True)
-COVERS_DIR.mkdir(exist_ok=True)
+# NOSKIPS_DATA_DIR relocates the library. Mostly this exists so the tests can
+# run against a throwaway folder instead of the real one — without it there is
+# no way to import this module without pointing it at whoever's library happens
+# to be next to the source, which is exactly the accident it was added after.
+DATA_DIR = Path(os.environ.get("NOSKIPS_DATA_DIR") or (ROOT / "data"))
+COVERS_DIR = Path(os.environ.get("NOSKIPS_COVERS_DIR") or (ROOT / "covers"))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+COVERS_DIR.mkdir(parents=True, exist_ok=True)
 RATINGS_FILE = DATA_DIR / "ratings.json"
+# Videos live in their own file, in the same format. Two stores rather than one
+# with a flag, because it makes the important guarantee structural: the sync
+# engine is only ever handed the music store, so a video *cannot* reach the
+# shared index by accident. Nothing has to remember to check a field.
+VIDEOS_FILE = DATA_DIR / "videos.json"
 
 PORT = 7700
 
@@ -78,14 +88,20 @@ app = Flask(__name__, static_folder=str(BUNDLE / "static"), static_url_path="")
 _ratings_lock = threading.Lock()
 
 
-def _load():
-    if RATINGS_FILE.exists():
-        return json.loads(RATINGS_FILE.read_text(encoding="utf-8"))
+def _store_file(kind):
+    """Which file a verdict belongs in — see media_kind.store_for for why."""
+    return VIDEOS_FILE if media_kind.store_for(kind) == media_kind.VIDEO else RATINGS_FILE
+
+
+def _load(kind=media_kind.MUSIC):
+    path = _store_file(kind)
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
     return {"albums": {}}
 
 
-def _save(data):
-    RATINGS_FILE.write_text(
+def _save(data, kind=media_kind.MUSIC):
+    _store_file(kind).write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
@@ -100,11 +116,15 @@ def _album_avg(album):
 
 
 def _library_as_ops():
-    """Every stored rating, as sync ops — used once, right after pairing, so a
-    shelf built up over months shows up on the account instead of only the
-    tracks rated from then on."""
+    """Every stored *music* rating, as sync ops — used once, right after
+    pairing, so a shelf built up over months shows up on the account instead of
+    only the tracks rated from then on.
+
+    It reads the music store and nothing else, which is the whole reason videos
+    get their own file: they can't be leaked by forgetting a condition here.
+    """
     with _ratings_lock:
-        data = _load()
+        data = _load(media_kind.MUSIC)
     return [
         {
             "op": "rate",
@@ -185,6 +205,11 @@ async def _poll_forever():
                 artist = info.artist or ""
                 album = info.album_title or ""
                 title = info.title or ""
+                source = session.source_app_user_model_id or ""
+                kind = media_kind.classify(
+                    info, pb, source_app=source, album=album, artist=artist
+                )
+
                 cover = ""
                 if title:
                     cpath = _cover_path(artist, album)
@@ -208,6 +233,8 @@ async def _poll_forever():
                     "title": title,
                     "artist": artist,
                     "album": album,
+                    "kind": kind,
+                    "source": source,
                     "playing": pb.playback_status == PlaybackStatus.PLAYING,
                     "position": tl.position.total_seconds() if tl.position else 0,
                     "duration": tl.end_time.total_seconds() if tl.end_time else 0,
@@ -260,13 +287,18 @@ def api_now():
         snap = dict(_now)
     if snap.get("active"):
         with _ratings_lock:
-            data = _load()
+            data = _load(snap.get("kind"))
         album = data["albums"].get(_album_key(snap["artist"], snap["album"]))
         saved = album["tracks"].get(snap["title"]) if album else None
         snap["saved"] = saved
         # what everyone else made of it — from cache, so this never blocks and
-        # stays None until the answer arrives (or forever, if sync is off)
-        snap["shared"] = SYNC.shared_for(snap["artist"], snap["album"], snap["title"])
+        # stays None until the answer arrives (or forever, if sync is off).
+        # Videos have no shared side at all, so we never even ask.
+        snap["shared"] = (
+            None
+            if snap.get("kind") == media_kind.VIDEO
+            else SYNC.shared_for(snap["artist"], snap["album"], snap["title"])
+        )
     return jsonify(snap)
 
 
@@ -311,13 +343,26 @@ def _is_playing_now(artist, album, title):
     )
 
 
+def _kind_now(title, fallback=media_kind.MUSIC):
+    """What Windows says is playing, for a verdict being stamped on it."""
+    with _now_lock:
+        snap = dict(_now)
+    if snap.get("active") and snap.get("title") == title:
+        return snap.get("kind") or fallback
+    return fallback
+
+
 @app.post("/api/rate")
 def api_rate():
     body = request.get_json(force=True)
     artist, album, title = body["artist"], body["album"], body["title"]
+    # the client passes what it was shown; the live session is the tiebreaker
+    kind = body.get("kind") or _kind_now(title)
+    if kind not in (media_kind.MUSIC, media_kind.VIDEO, media_kind.UNKNOWN, media_kind.IMAGE):
+        kind = media_kind.MUSIC
     key = _album_key(artist, album)
     with _ratings_lock:
-        data = _load()
+        data = _load(kind)
         entry = data["albums"].setdefault(
             key, {"artist": artist, "album": album, "cover": "", "tracks": {}}
         )
@@ -340,6 +385,9 @@ def api_rate():
             "note": body.get("note", "").strip(),
             "date": datetime.now().isoformat(timespec="seconds"),
             "trace": trace or previous.get("trace"),
+            # kept on the record as well as implied by the file, so the shape
+            # survives being copied, merged or hand-edited
+            "kind": kind,
             # a local revision counter, so a queued op can never be overtaken by
             # an older one that happened to reach the server later
             "rev": int(previous.get("rev", 0)) + 1,
@@ -347,10 +395,16 @@ def api_rate():
             "notePublic": bool(body.get("notePublic", True)),
         }
         entry["tracks"][title] = record
-        _save(data)
+        _save(data, kind)
         avg = _album_avg(entry)
 
-    # queued outside the lock, and the queue is local — the button is already done
+    # Videos stop here. They keep a shelf of their own on this machine, but the
+    # shared index is meant to be songs somebody stopped and judged, and a
+    # channel's upload is not that.
+    if kind == media_kind.VIDEO:
+        return jsonify(ok=True, albumAvg=avg, kind=kind, shared=False, sync=SYNC.status())
+
+    # Queued outside the lock, and the queue is local — the button is already done
     SYNC.enqueue(
         {
             "op": "rate",
@@ -378,16 +432,26 @@ def api_unrate():
     artist, album, title = body["artist"], body["album"], body["title"]
     key = _album_key(artist, album)
     removed = None
-    with _ratings_lock:
-        data = _load()
-        entry = data["albums"].get(key)
-        if entry and title in entry["tracks"]:
-            removed = entry["tracks"].pop(title)
-            if not entry["tracks"]:
-                del data["albums"][key]
-            _save(data)
+    removed_from = media_kind.MUSIC
 
-    if removed is not None:
+    with _ratings_lock:
+        # the caller may not know which shelf it was on, so try both rather than
+        # make the UI keep track
+        for store in (body.get("kind"), media_kind.MUSIC, media_kind.VIDEO):
+            if store is None:
+                continue
+            data = _load(store)
+            entry = data["albums"].get(key)
+            if entry and title in entry["tracks"]:
+                removed = entry["tracks"].pop(title)
+                if not entry["tracks"]:
+                    del data["albums"][key]
+                _save(data, store)
+                removed_from = store
+                break
+
+    # only music was ever sent, so only music needs withdrawing
+    if removed is not None and removed_from != media_kind.VIDEO:
         SYNC.enqueue(
             {
                 "op": "unrate",
@@ -400,10 +464,10 @@ def api_unrate():
     return jsonify(ok=True, sync=SYNC.status())
 
 
-@app.get("/api/library")
-def api_library():
+def _shelf(kind):
+    """One store, in the shape the shelf renders."""
     with _ratings_lock:
-        data = _load()
+        data = _load(kind)
     albums = []
     for entry in data["albums"].values():
         tracks = [
@@ -421,10 +485,21 @@ def api_library():
                 "count": len(tracks),
                 "latest": max(t["date"] for t in tracks),
                 "tracks": tracks,
+                "kind": kind,
             }
         )
     albums.sort(key=lambda a: a["latest"], reverse=True)
-    return jsonify(albums=albums)
+    return albums
+
+
+@app.get("/api/library")
+def api_library():
+    # `albums` keeps its old name and meaning so nothing that already reads this
+    # endpoint changes; videos arrive alongside it as their own shelf.
+    return jsonify(
+        albums=_shelf(media_kind.MUSIC),
+        videos=_shelf(media_kind.VIDEO),
+    )
 
 
 # -------------------------------------------------------------- visualizer ----
