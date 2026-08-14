@@ -1,4 +1,4 @@
-# rateify ♪
+# noskips ♪
 
 *judge every song. keep receipts.*
 
@@ -9,6 +9,10 @@ verdict on every song — typewriter, handwriting, washi tape and all.
   <img src="assets/widget-now.png" width="300" alt="now spinning view with the rating drawer open">
   <img src="assets/widget-shelf.png" width="300" alt="the shelf view">
 </p>
+
+> Previously released as **Rateify** — renamed in 2.0.0 because that name was
+> already taken. Your library comes across automatically the first time you run
+> it; see [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Why it's neat
 
@@ -31,17 +35,45 @@ verdict on every song — typewriter, handwriting, washi tape and all.
   from the gear icon.
 - **Color themes** — classic, noir, mint, berry, ocean — same hand-stamped
   look, different palette.
-- **A mini, almost-hidden mode** — tuck it away into a tiny transparent bar
-  with just the cover, title, artist and a little animated equalizer that
-  bounces while it's playing.
+- **A mini, almost-hidden mode** — tuck it away into a tiny transparent bar,
+  in one of four looks: **the spool** (a mini cassette whose tape winds as the
+  song plays), **the groove** (a tiny record with the tonearm tracking inward),
+  **the hiss** (sixteen bands of what's actually coming out of your speakers),
+  or **the ticker** (the title typed onto receipt paper feeding out).
+- **The trace** — switch listening on and every stamp keeps the shape of the
+  sound at the second you made it, drawn onto the verdict here and on the web.
+  Only ever recorded when the track was genuinely playing: a trace claims *this
+  is what it sounded like*, so an invented one would make the honest ones
+  worthless.
+
+## The social half
+
+Optional, off, and silent until you ask for it. Sign in and your shelf gets a
+page with your name on it.
+
+- **Nothing leaves your machine until you sign in and switch sync on** — not
+  even the lookup that asks what other people thought, because asking tells the
+  server what you're playing. Covers never leave at all.
+- **Offline-first.** Rating writes to your local JSON and queues; the network
+  happens later, on its own thread. The button never waits.
+- **First press** — if nobody in the world has ever rated the track you're on,
+  the widget says so and the credit is yours. A song has no page here until a
+  human stamps it: no scraped catalog, no empty pages with a zero in them.
+- **The web** — profiles, album pages with the whole 1–10 scale as a histogram,
+  a chronological feed of people you follow, and cosigns instead of likes.
+- Sign in with Google, Discord or email. The exe never holds a secret: it hands
+  the login to your real browser and waits for a token it can use.
+
+See [docs/SERVER.md](docs/SERVER.md) to run the server, and
+[docs/WEBSITE.md](docs/WEBSITE.md) for the marketing site (planned, not built).
 
 ## Install
 
 Grab the latest [release](../../releases):
 
-- **`Rateify-Setup-x.y.z.exe`** — per-user installer, no admin needed, adds a
+- **`noskips-Setup-x.y.z.exe`** — per-user installer, no admin needed, adds a
   start-menu (and optionally desktop) shortcut.
-- **`Rateify-x.y.z-portable.zip`** — unzip anywhere and run `Rateify.exe`.
+- **`noskips-x.y.z-portable.zip`** — unzip anywhere and run `noskips.exe`.
 
 Your library lives in `data/` next to the exe and survives updates and
 uninstalls. If WebView2 is somehow missing, it falls back to opening the UI

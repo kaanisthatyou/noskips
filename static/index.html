@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>rateify ♪</title>
+<title>noskips ♪</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♪</text></svg>">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -18,7 +18,7 @@
 
 <header>
   <div class="pywebview-drag-region grab brand">
-    <h1 class="wordmark">rateify</h1>
+    <h1 class="wordmark">noskips</h1>
   </div>
   <div id="mini-now" class="mini-now" title="tap to open">
     <img id="mini-cover-sm" class="mini-cover-sm" alt="">
@@ -26,7 +26,8 @@
       <span id="mini-title" class="mini-title"></span>
       <span id="mini-artist" class="mini-artist"></span>
     </span>
-    <span class="mini-eq" id="mini-eq"><i></i><i></i><i></i></span>
+    <!-- built by setSkin(): spool, groove, hiss or ticker -->
+    <span class="mini-skin" id="mini-skin"></span>
   </div>
   <nav class="tabs">
     <button class="tab active" data-view="now" data-i18n="tab_now" data-i18n-title="tab_hint" title="tap again to tuck the widget away">now</button>
@@ -54,6 +55,7 @@
         <h2 id="t-title">—</h2>
         <p id="t-artist" class="artist">—</p>
         <p id="t-album" class="album">—</p>
+        <p id="shared-line" class="shared-line" hidden></p>
       </div>
 
       <div class="progress-zone">
@@ -91,6 +93,13 @@
         </div>
 
         <textarea id="note" class="note" rows="2" data-i18n-placeholder="note_placeholder" placeholder="scribble a note… (why this number?)"></textarea>
+
+        <!-- labels are owned by renderPrivacy(), which flips them with the
+             state, so no data-i18n here for applyI18n to overwrite -->
+        <div class="privacy" id="privacy" hidden>
+          <button class="privbtn on" id="priv-public">shared</button>
+          <button class="privbtn on" id="priv-note">note shared</button>
+        </div>
 
         <button id="save" class="save-btn">✦ stamp it</button>
       </div>
@@ -134,6 +143,23 @@
         <button class="swatch" data-theme="berry" title="berry"></button>
         <button class="swatch" data-theme="ocean" title="ocean"></button>
       </div>
+
+      <div class="tear"></div>
+
+      <p class="settings-label" data-i18n="settings_skin_label">tucked-away look</p>
+      <div class="skin-swatches" id="skin-swatches">
+        <button class="skinbtn" data-skin="spool" title="the spool">▤</button>
+        <button class="skinbtn" data-skin="groove" title="the groove">◎</button>
+        <button class="skinbtn" data-skin="hiss" title="the hiss">∿</button>
+        <button class="skinbtn" data-skin="ticker" title="the ticker">▭</button>
+      </div>
+
+      <div class="listen" id="listen"></div>
+
+      <div class="tear"></div>
+
+      <p class="settings-label" data-i18n="settings_account_label">account</p>
+      <div class="account" id="account"></div>
     </div>
   </section>
 

@@ -1,10 +1,13 @@
-; Inno Setup script for Rateify — compile with ISCC.exe installer.iss
-#define MyAppName "Rateify"
-#define MyAppVersion "1.2.0"
-#define MyAppExeName "Rateify.exe"
+; Inno Setup script for noskips — compile with ISCC.exe installer.iss
+#define MyAppName "noskips"
+#define MyAppVersion "2.0.0"
+#define MyAppExeName "noskips.exe"
 
 [Setup]
-AppId={{B3A7F2C4-9D1E-4A6B-8C05-2F7E9A31D6C4}
+; NB: a fresh AppId, not Rateify's. This installs *alongside* an old Rateify
+; rather than over it — the app copies the old library across on first run
+; (see _migrate_from_rateify in app.py) and leaves the old install untouched.
+AppId={{7C2E5A19-4B3D-4F86-9A17-D0C8E4B62F31}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher=Kaan
@@ -13,8 +16,8 @@ DisableProgramGroupPage=yes
 ; per-user install: no admin prompt, and the app can write its library next to itself
 PrivilegesRequired=lowest
 OutputDir=release
-OutputBaseFilename=Rateify-Setup-{#MyAppVersion}
-SetupIconFile=rateify.ico
+OutputBaseFilename=noskips-Setup-{#MyAppVersion}
+SetupIconFile=noskips.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern

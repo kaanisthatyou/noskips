@@ -1,4 +1,4 @@
-/* ============ rateify frontend ============ */
+/* ============ noskips frontend ============ */
 
 const $ = (id) => document.getElementById(id);
 
@@ -43,6 +43,25 @@ const I18N = {
     remove_rating: "remove rating",
     settings_lang_label: "language",
     settings_theme_label: "color theme",
+    settings_account_label: "account",
+    settings_skin_label: "tucked-away look",
+    listen_on: "listening", listen_off: "listen to the sound",
+    listen_hint: "reads what your speakers are playing, so the bars are real and every stamp keeps a trace of the moment. off by default.",
+    priv_public: "shared", priv_public_off: "private",
+    priv_note: "note shared", priv_note_off: "note private",
+    acct_signed_out: "not signed in — everything stays on this pc",
+    acct_pair: "link this pc",
+    acct_pairing: "code {code} — finish in your browser",
+    acct_cancel: "cancel",
+    acct_signout: "sign out",
+    acct_as: "signed in as @{handle}",
+    acct_no_handle: "signed in — claim a handle on the site",
+    acct_sync_on: "syncing", acct_sync_off: "sync paused",
+    acct_unsent: "{n} waiting to send",
+    acct_synced: "all sent",
+    shared_first: "nobody has stamped this — be the first press ✦",
+    shared_avg: "{count} verdicts · avg {avg}",
+    shared_first_by: "first pressed by @{handle}",
   },
   tr: {
     tab_now: "şimdi", tab_shelf: "raf", tab_settings: "ayarlar",
@@ -66,6 +85,25 @@ const I18N = {
     remove_rating: "puanı kaldır",
     settings_lang_label: "dil",
     settings_theme_label: "renk teması",
+    settings_account_label: "hesap",
+    settings_skin_label: "gizli görünüm",
+    listen_on: "dinliyor", listen_off: "sesi dinle",
+    listen_hint: "hoparlörden çıkanı okur; çubuklar gerçek olur ve her damga o anın izini saklar. varsayılan olarak kapalı.",
+    priv_public: "paylaşımda", priv_public_off: "gizli",
+    priv_note: "not paylaşımda", priv_note_off: "not gizli",
+    acct_signed_out: "giriş yapılmadı — her şey bu bilgisayarda kalıyor",
+    acct_pair: "bu bilgisayarı bağla",
+    acct_pairing: "kod {code} — tarayıcında tamamla",
+    acct_cancel: "iptal",
+    acct_signout: "çıkış yap",
+    acct_as: "@{handle} olarak girildi",
+    acct_no_handle: "girildi — sitede bir kullanıcı adı al",
+    acct_sync_on: "eşitleniyor", acct_sync_off: "eşitleme duraklatıldı",
+    acct_unsent: "{n} tanesi gönderilmeyi bekliyor",
+    acct_synced: "hepsi gönderildi",
+    shared_first: "bunu kimse damgalamamış — ilk baskı sen ol ✦",
+    shared_avg: "{count} hüküm · ort. {avg}",
+    shared_first_by: "ilk baskı: @{handle}",
   },
   es: {
     tab_now: "ahora", tab_shelf: "estante", tab_settings: "ajustes",
@@ -89,6 +127,25 @@ const I18N = {
     remove_rating: "eliminar calificación",
     settings_lang_label: "idioma",
     settings_theme_label: "tema de color",
+    settings_account_label: "cuenta",
+    settings_skin_label: "aspecto recogido",
+    listen_on: "escuchando", listen_off: "escuchar el sonido",
+    listen_hint: "lee lo que suena en tus altavoces, así las barras son reales y cada sello guarda un rastro del momento. desactivado por defecto.",
+    priv_public: "compartido", priv_public_off: "privado",
+    priv_note: "nota compartida", priv_note_off: "nota privada",
+    acct_signed_out: "sin sesión — todo se queda en este pc",
+    acct_pair: "vincular este pc",
+    acct_pairing: "código {code} — termina en tu navegador",
+    acct_cancel: "cancelar",
+    acct_signout: "cerrar sesión",
+    acct_as: "conectado como @{handle}",
+    acct_no_handle: "conectado — elige un usuario en el sitio",
+    acct_sync_on: "sincronizando", acct_sync_off: "sincronización en pausa",
+    acct_unsent: "{n} por enviar",
+    acct_synced: "todo enviado",
+    shared_first: "nadie ha sellado esto — sé la primera prensa ✦",
+    shared_avg: "{count} veredictos · promedio {avg}",
+    shared_first_by: "primera prensa de @{handle}",
   },
   ja: {
     tab_now: "再生中", tab_shelf: "棚", tab_settings: "設定",
@@ -112,6 +169,25 @@ const I18N = {
     remove_rating: "評価を削除",
     settings_lang_label: "言語",
     settings_theme_label: "カラーテーマ",
+    settings_account_label: "アカウント",
+    settings_skin_label: "折りたたみ時の見た目",
+    listen_on: "聴いています", listen_off: "音を聴く",
+    listen_hint: "スピーカーの音を読み取ります。バーが本物になり、評価にはその瞬間の波形が残ります。既定はオフです。",
+    priv_public: "共有中", priv_public_off: "非公開",
+    priv_note: "メモも共有", priv_note_off: "メモは非公開",
+    acct_signed_out: "未ログイン — すべてこのPCの中だけです",
+    acct_pair: "このPCを連携する",
+    acct_pairing: "コード {code} — ブラウザで完了してください",
+    acct_cancel: "キャンセル",
+    acct_signout: "ログアウト",
+    acct_as: "@{handle} としてログイン中",
+    acct_no_handle: "ログイン済み — サイトでハンドルを取得してください",
+    acct_sync_on: "同期中", acct_sync_off: "同期を一時停止中",
+    acct_unsent: "{n}件が送信待ち",
+    acct_synced: "すべて送信済み",
+    shared_first: "まだ誰も評価していません — 最初の一枚になろう ✦",
+    shared_avg: "{count}件の評価・平均 {avg}",
+    shared_first_by: "最初の評価: @{handle}",
   },
   zh: {
     tab_now: "正在播放", tab_shelf: "唱片架", tab_settings: "设置",
@@ -135,10 +211,40 @@ const I18N = {
     remove_rating: "删除评分",
     settings_lang_label: "语言",
     settings_theme_label: "配色主题",
+    settings_account_label: "账号",
+    settings_skin_label: "收起时的样子",
+    listen_on: "正在聆听", listen_off: "聆听声音",
+    listen_hint: "读取扬声器正在播放的声音，让波形是真实的，并为每次盖章留下当时的痕迹。默认关闭。",
+    priv_public: "已共享", priv_public_off: "私密",
+    priv_note: "笔记已共享", priv_note_off: "笔记私密",
+    acct_signed_out: "未登录 — 所有内容都留在这台电脑上",
+    acct_pair: "关联这台电脑",
+    acct_pairing: "验证码 {code} — 请在浏览器中完成",
+    acct_cancel: "取消",
+    acct_signout: "退出登录",
+    acct_as: "已登录为 @{handle}",
+    acct_no_handle: "已登录 — 请在网站上认领一个用户名",
+    acct_sync_on: "同步中", acct_sync_off: "同步已暂停",
+    acct_unsent: "{n} 条待发送",
+    acct_synced: "已全部发送",
+    shared_first: "还没有人评过这首 — 来当第一个 ✦",
+    shared_avg: "{count} 条评价 · 均分 {avg}",
+    shared_first_by: "首评：@{handle}",
   },
 };
 
-let lang = localStorage.getItem("rateify_lang") || "en";
+// prefs moved from the rateify_* keys when the app was renamed; read the old
+// key once so an upgrading user keeps their language and theme
+function pref(name, fallback) {
+  return (
+    localStorage.getItem(`noskips_${name}`) ??
+    localStorage.getItem(`rateify_${name}`) ??
+    fallback
+  );
+}
+const setPref = (name, value) => localStorage.setItem(`noskips_${name}`, value);
+
+let lang = pref("lang", "en");
 
 function t(key, params) {
   let s = (I18N[lang] && I18N[lang][key]) ?? I18N.en[key] ?? key;
@@ -155,9 +261,12 @@ function applyI18n() {
 
 function setLang(l) {
   lang = l;
-  localStorage.setItem("rateify_lang", l);
+  setPref("lang", l);
   applyI18n();
   renderRating();
+  renderAccount();
+  renderListening();
+  renderShared();
   resetRating(now && now.saved);
   openPanel = null;
   if (!shelfDirty) loadShelf();
@@ -169,11 +278,11 @@ document.querySelectorAll(".lang-pill").forEach((p) =>
 
 // ---------------------------------------------------------------- theme ----
 const THEMES = ["classic", "noir", "mint", "berry", "ocean"];
-let theme = localStorage.getItem("rateify_theme") || "classic";
+let theme = pref("theme", "classic");
 
 function setTheme(name) {
   theme = name;
-  localStorage.setItem("rateify_theme", name);
+  setPref("theme", name);
   document.body.classList.remove(...THEMES.map((n) => `theme-${n}`));
   document.body.classList.add(`theme-${name}`);
   document.querySelectorAll(".swatch").forEach((s) => s.classList.toggle("on", s.dataset.theme === name));
@@ -185,6 +294,243 @@ document.querySelectorAll(".swatch").forEach((s) =>
 
 setTheme(theme);
 applyI18n();
+
+// ---------------------------------------------------- tucked-away skins ----
+// Four ways for the mini bar to show a song. Each builds its DOM once in
+// setSkin() and is then updated per frame from drawProgress(), so nothing
+// allocates in the animation loop.
+const SKINS = ["spool", "groove", "hiss", "ticker"];
+let skin = pref("skin", "spool");
+let spectrum = [];      // last frame from /api/spectrum
+let spectrumTap = null; // the EventSource, open only while something needs it
+
+const SKIN_HTML = {
+  // a mini cassette: tape winds from the left hub to the right as it plays
+  spool: `<span class="sk-spool">
+      <i class="hub left"></i><i class="tape"></i><i class="hub right"></i>
+    </span>`,
+  // a tiny record; the tonearm tracks inward exactly as far as you've listened
+  groove: `<span class="sk-groove"><i class="disc"></i><i class="arm"></i></span>`,
+  // sixteen bands of whatever is actually coming out of the speakers
+  hiss: `<span class="sk-hiss">${'<i></i>'.repeat(16)}</span>`,
+  // the title, typed onto a strip of receipt paper feeding out of the bar
+  ticker: `<span class="sk-ticker"><i class="strip"><b></b></i></span>`,
+};
+
+function setSkin(name) {
+  skin = SKINS.includes(name) ? name : "spool";
+  setPref("skin", skin);
+  const box = $("mini-skin");
+  box.className = `mini-skin skin-${skin}`;
+  box.innerHTML = SKIN_HTML[skin];
+  document.querySelectorAll(".skinbtn").forEach((b) => b.classList.toggle("on", b.dataset.skin === skin));
+  tapSpectrum();
+}
+
+document.querySelectorAll(".skinbtn").forEach((b) =>
+  b.addEventListener("click", () => setSkin(b.dataset.skin))
+);
+
+// Only hold the stream open while something is actually drawing it — an idle
+// EventSource is a thread on the widget's tiny Flask server for no reason.
+function tapSpectrum() {
+  const wanted = skin === "hiss";
+  if (wanted && !spectrumTap) {
+    spectrumTap = new EventSource("/api/spectrum");
+    spectrumTap.onmessage = (e) => {
+      try {
+        spectrum = JSON.parse(e.data);
+      } catch {
+        spectrum = [];
+      }
+    };
+    spectrumTap.onerror = () => {
+      /* the widget carries on regardless; bars just stop moving */
+    };
+  } else if (!wanted && spectrumTap) {
+    spectrumTap.close();
+    spectrumTap = null;
+    spectrum = [];
+  }
+}
+
+function drawSkin(progress, playing) {
+  const box = $("mini-skin");
+  if (!box.firstElementChild) return;
+
+  if (skin === "spool") {
+    // both hubs turn while playing; the tape thickens as the song winds on
+    const spin = playing ? (Date.now() / 1000) * 220 : 0;
+    box.style.setProperty("--spin", `${spin}deg`);
+    box.style.setProperty("--wound", progress.toFixed(3));
+  } else if (skin === "groove") {
+    // the arm swings from the rim (-18°) toward the label (+16°)
+    box.style.setProperty("--arm", `${-18 + progress * 34}deg`);
+    box.style.setProperty("--spin", `${playing ? (Date.now() / 1000) * 200 : 0}deg`);
+  } else if (skin === "hiss") {
+    const bars = box.querySelectorAll("i");
+    bars.forEach((bar, i) => {
+      const value = spectrum[i] ?? 0;
+      bar.style.height = `${6 + value * 20}px`;
+    });
+  } else if (skin === "ticker") {
+    box.style.setProperty("--fed", `${(progress * 100).toFixed(1)}%`);
+    const strip = box.querySelector("b");
+    const text = (now && now.title) || "";
+    if (strip.textContent !== text) strip.textContent = text;
+  }
+}
+
+// ---------------------------------------------------------- listening ----
+let listening = { enabled: false, available: false };
+
+async function loadListening() {
+  try {
+    listening = await (await fetch("/api/visual")).json();
+  } catch {
+    return;
+  }
+  renderListening();
+}
+
+function renderListening() {
+  const box = $("listen");
+  if (!box) return;
+  box.innerHTML = "";
+
+  const button = document.createElement("button");
+  button.className = `acct-btn${listening.enabled ? " on" : ""}`;
+  button.textContent = listening.enabled ? t("listen_on") : t("listen_off");
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    try {
+      listening = await (
+        await fetch("/api/visual", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ on: !listening.enabled }),
+        })
+      ).json();
+    } catch {
+      /* leave the last known state up */
+    }
+    renderListening();
+  });
+  box.appendChild(button);
+
+  const note = document.createElement("p");
+  note.className = "acct-note";
+  note.textContent = listening.enabled && listening.error
+    ? listening.error
+    : t("listen_hint");
+  box.appendChild(note);
+  fitWindow();
+}
+
+// -------------------------------------------------------------- account ----
+// The widget is happy signed out forever; this whole section is opt-in, and
+// until it's used the app opens no connections at all.
+let acct = { signed_in: false, sync_on: false, unsent: 0, pairing: null };
+let acctTimer = null;
+
+async function loadAccount() {
+  try {
+    acct = await (await fetch("/api/account")).json();
+  } catch {
+    return; // the local server blinked; leave the last known state up
+  }
+  renderAccount();
+  renderPrivacy();
+  // watch closely while a pairing is in flight, idle the rest of the time
+  clearInterval(acctTimer);
+  acctTimer = setInterval(loadAccount, acct.pairing ? 2000 : 30000);
+}
+
+async function accountPost(url, body) {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body || {}),
+    });
+    const out = await res.json();
+    if (out.sync) acct = out.sync;
+    if (out.error) acct = { ...acct, last_error: out.error };
+  } catch {
+    /* offline is a normal state here, not an error worth shouting about */
+  }
+  renderAccount();
+  renderPrivacy();
+  clearInterval(acctTimer);
+  acctTimer = setInterval(loadAccount, acct.pairing ? 2000 : 30000);
+}
+
+function renderAccount() {
+  const box = $("account");
+  if (!box) return;
+  box.innerHTML = "";
+
+  const line = (cls, text) => {
+    const p = document.createElement("p");
+    p.className = cls;
+    p.textContent = text;
+    box.appendChild(p);
+  };
+  const button = (text, fn, cls) => {
+    const b = document.createElement("button");
+    b.className = "acct-btn" + (cls ? ` ${cls}` : "");
+    b.textContent = text;
+    b.addEventListener("click", fn);
+    box.appendChild(b);
+  };
+
+  if (acct.pairing) {
+    line("acct-code", acct.pairing.code);
+    line("acct-note", t("acct_pairing", { code: acct.pairing.code }));
+    button(t("acct_cancel"), () => accountPost("/api/account/cancel"));
+  } else if (!acct.signed_in) {
+    line("acct-note", t("acct_signed_out"));
+    button(t("acct_pair"), () => accountPost("/api/account/pair"), "go");
+  } else {
+    line("acct-who", acct.handle ? t("acct_as", { handle: acct.handle }) : t("acct_no_handle"));
+    button(
+      acct.sync_on ? t("acct_sync_on") : t("acct_sync_off"),
+      () => accountPost("/api/account/sync", { on: !acct.sync_on }),
+      acct.sync_on ? "on" : ""
+    );
+    line("acct-note", acct.unsent ? t("acct_unsent", { n: acct.unsent }) : t("acct_synced"));
+    button(t("acct_signout"), () => accountPost("/api/account/signout"));
+  }
+  if (acct.last_error) line("acct-err", acct.last_error);
+  fitWindow();
+}
+
+// ------------------------------------------------------ per-rating privacy ----
+let priv = { public: true, notePublic: true };
+
+function renderPrivacy() {
+  const box = $("privacy");
+  // nothing to decide about sharing when nothing is being shared
+  box.hidden = !(acct.signed_in && acct.sync_on);
+  const pub = $("priv-public");
+  const note = $("priv-note");
+  pub.classList.toggle("on", priv.public);
+  pub.textContent = priv.public ? t("priv_public") : t("priv_public_off");
+  note.classList.toggle("on", priv.notePublic);
+  note.textContent = priv.notePublic ? t("priv_note") : t("priv_note_off");
+  note.disabled = !priv.public;
+}
+
+$("priv-public").addEventListener("click", () => {
+  priv.public = !priv.public;
+  if (!priv.public) priv.notePublic = false; // a private verdict can't have a public note
+  renderPrivacy();
+});
+$("priv-note").addEventListener("click", () => {
+  if (!priv.public) return;
+  priv.notePublic = !priv.notePublic;
+  renderPrivacy();
+});
 
 // label for an already-stored numeric value (used on the shelf)
 const prettyAvg = (v) => (v == null ? "–" : (Math.round(v * 10) / 10).toFixed(1));
@@ -290,11 +636,15 @@ function resetRating(saved) {
     sel.mod = v < n - 0.1 ? "light" : v > n + 0.1 ? "strong" : "just";
     $("note").value = saved.note || "";
     $("stamp").hidden = false;
+    // ratings from before the social layer have no flags; sharing is the default
+    priv = { public: saved.public !== false, notePublic: saved.notePublic !== false };
   } else {
     sel = { n: null, mod: "just" };
     $("note").value = "";
     $("stamp").hidden = true;
+    priv = { public: true, notePublic: true };
   }
+  renderPrivacy();
   const btn = $("save");
   btn.classList.remove("saved");
   btn.textContent = saved ? t("restamp_it") : t("stamp_it");
@@ -325,10 +675,16 @@ $("save").addEventListener("click", async () => {
         value: valueOf(sel.n, sel.mod),
         label: labelOf(sel.n, sel.mod),
         note: $("note").value,
+        public: priv.public,
+        notePublic: priv.notePublic,
       }),
     });
     const out = await res.json();
     if (out.ok) {
+      if (out.sync) {
+        acct = out.sync;
+        renderAccount();
+      }
       shelfDirty = true;
       const stamp = $("stamp");
       stamp.hidden = true;
@@ -416,6 +772,8 @@ function renderNow() {
     cover.src = want;
   }
 
+  renderShared();
+
   $("vinyl").classList.toggle("out", now.playing);
   card.classList.toggle("playing", now.playing);
   // NB: the `hidden` attribute is ignored on inline <svg>, use display
@@ -423,6 +781,34 @@ function renderNow() {
   $("icon-pause").style.display = now.playing ? "" : "none";
 
   syncClock();
+}
+
+// what everyone else made of this track. absent until sync is on and the
+// answer has arrived, so the layout never jumps around waiting for a network
+function renderShared() {
+  const el = $("shared-line");
+  const s = now && now.shared;
+  if (!s) {
+    if (!el.hidden) {
+      el.hidden = true;
+      fitWindow();
+    }
+    return;
+  }
+  const wasHidden = el.hidden;
+  el.hidden = false;
+  el.classList.toggle("first", !s.exists);
+
+  let text;
+  if (!s.exists) {
+    // the good moment: nobody in the world has stamped this one
+    text = t("shared_first");
+  } else {
+    text = t("shared_avg", { count: s.count, avg: prettyAvg(s.average) });
+    if (s.first_press_by) text += ` · ${t("shared_first_by", { handle: s.first_press_by })}`;
+  }
+  if (el.textContent !== text) el.textContent = text;
+  if (wasHidden) fitWindow();
 }
 
 // ------------------------------------------------------- smooth progress ----
@@ -454,11 +840,14 @@ function drawProgress() {
   if (now && now.active && clock.duration) {
     let pos = clock.pos + (clock.playing ? Date.now() / 1000 - clock.at : 0);
     pos = Math.min(pos, clock.duration);
-    $("p-fill").style.width = `${(pos / clock.duration) * 100}%`;
+    const progress = pos / clock.duration;
+    $("p-fill").style.width = `${progress * 100}%`;
     const cur = fmt(pos);
     if ($("p-cur").textContent !== cur) $("p-cur").textContent = cur;
     const dur = fmt(clock.duration);
     if ($("p-dur").textContent !== dur) $("p-dur").textContent = dur;
+    // the mini bar is driven by the same clock, so it never drifts from the bar
+    if (collapsed) drawSkin(progress, clock.playing);
   }
   requestAnimationFrame(drawProgress);
 }
@@ -567,6 +956,10 @@ window.addEventListener("pywebviewready", () => {
 
 // ----------------------------------------------------------------- boot ----
 renderRating();
+renderPrivacy();
+setSkin(skin);
+loadAccount();
+loadListening();
 pollNow();
 setInterval(pollNow, 1000);
 if (location.hash === "#shelf")

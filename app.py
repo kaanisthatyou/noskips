@@ -1,13 +1,15 @@
-"""Rateify — tiny local widget that shows what Spotify is playing and lets you rate it.
+"""noskips — tiny local widget that shows what Spotify is playing and lets you rate it.
 
 Reads Windows' media session (SMTC), so no Spotify API keys are needed.
 Run:  python app.py   → opens http://127.0.0.1:7700
 """
-__version__ = "1.2.0"
+__version__ = "2.0.0"
 
 import asyncio
 import hashlib
 import json
+import os
+import shutil
 import socket
 import sys
 import threading
@@ -17,6 +19,9 @@ from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
+
+from audio import Visualizer, procedural_bands
+from sync import SyncEngine
 
 from winrt.windows.media.control import (
     GlobalSystemMediaTransportControlsSessionManager as SessionManager,
@@ -35,6 +40,36 @@ COVERS_DIR.mkdir(exist_ok=True)
 RATINGS_FILE = DATA_DIR / "ratings.json"
 
 PORT = 7700
+
+
+def _migrate_from_rateify():
+    """This app used to be called Rateify and installed to its own folder, so an
+    upgrader's library sits next to the *old* exe. Copy it across on first run.
+
+    Deliberately a copy, not a move: the old install keeps working until they
+    uninstall it, and nobody loses a library to a half-finished migration.
+    """
+    if RATINGS_FILE.exists() or (DATA_DIR / ".migrated-from-rateify").exists():
+        return
+    local = os.environ.get("LOCALAPPDATA")
+    if not local:
+        return
+    legacy = Path(local) / "Programs" / "Rateify"
+    if not (legacy / "data" / "ratings.json").exists():
+        return
+    try:
+        shutil.copy2(legacy / "data" / "ratings.json", RATINGS_FILE)
+        if (legacy / "covers").is_dir():
+            shutil.copytree(legacy / "covers", COVERS_DIR, dirs_exist_ok=True)
+        (DATA_DIR / ".migrated-from-rateify").write_text(
+            f"copied from {legacy} on {datetime.now().isoformat(timespec='seconds')}\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        pass  # a failed migration must never stop the app from starting
+
+
+_migrate_from_rateify()
 
 app = Flask(__name__, static_folder=str(BUNDLE / "static"), static_url_path="")
 
@@ -62,6 +97,44 @@ def _album_key(artist, album):
 def _album_avg(album):
     values = [t["value"] for t in album["tracks"].values()]
     return round(sum(values) / len(values), 2) if values else None
+
+
+def _library_as_ops():
+    """Every stored rating, as sync ops — used once, right after pairing, so a
+    shelf built up over months shows up on the account instead of only the
+    tracks rated from then on."""
+    with _ratings_lock:
+        data = _load()
+    return [
+        {
+            "op": "rate",
+            "artist": entry["artist"],
+            "album": entry["album"],
+            "title": title,
+            "value": info["value"],
+            "label": info["label"],
+            "note": info.get("note", ""),
+            "trace": info.get("trace"),
+            "rev": int(info.get("rev", 1)),
+            "rated_at": info.get("date"),
+            "updated_at": info.get("date"),
+            "is_public": info.get("public", True),
+            "note_public": info.get("notePublic", True),
+        }
+        for entry in data["albums"].values()
+        for title, info in entry["tracks"].items()
+    ]
+
+
+# The social half. Dormant until the user pairs a device and switches sync on —
+# until then it opens no connections at all.
+SYNC = SyncEngine(
+    DATA_DIR, app_version=__version__, library_provider=_library_as_ops
+).start()
+
+# Listening is off until asked for. See audio.py for why every part of it is
+# written to fail into "not available" rather than to block.
+VIS = Visualizer()
 
 
 # ------------------------------------------------------------ SMTC worker ----
@@ -144,6 +217,16 @@ async def _poll_forever():
             with _now_lock:
                 _now.clear()
                 _now.update(snap)
+
+            # one observation per second, which is about one per trace bucket
+            # on a four-minute song — the resolution the trace was sized for
+            if snap.get("active") and VIS.enabled:
+                VIS.trace.feed(
+                    f"{snap['artist']}:::{snap['album']}:::{snap['title']}",
+                    snap.get("position", 0),
+                    snap.get("duration", 0),
+                    VIS.level(),
+                )
         except Exception as exc:  # keep the poller alive no matter what
             with _now_lock:
                 _now.clear()
@@ -181,6 +264,9 @@ def api_now():
         album = data["albums"].get(_album_key(snap["artist"], snap["album"]))
         saved = album["tracks"].get(snap["title"]) if album else None
         snap["saved"] = saved
+        # what everyone else made of it — from cache, so this never blocks and
+        # stays None until the answer arrives (or forever, if sync is off)
+        snap["shared"] = SYNC.shared_for(snap["artist"], snap["album"], snap["title"])
     return jsonify(snap)
 
 
@@ -209,6 +295,22 @@ def api_control():
     return jsonify(ok=bool(ok))
 
 
+def _is_playing_now(artist, album, title):
+    """Was this actually spinning when they stamped it?
+
+    That's the difference between a 'live' verdict and one typed from memory,
+    and it's the only claim the shared world treats as special.
+    """
+    with _now_lock:
+        snap = dict(_now)
+    return bool(
+        snap.get("active")
+        and snap.get("title") == title
+        and snap.get("artist") == artist
+        and snap.get("album") == album
+    )
+
+
 @app.post("/api/rate")
 def api_rate():
     body = request.get_json(force=True)
@@ -222,29 +324,80 @@ def api_rate():
         cpath = _cover_path(artist, album)
         if cpath.exists():
             entry["cover"] = f"/covers/{cpath.name}"
-        entry["tracks"][title] = {
+        previous = entry["tracks"].get(title) or {}
+        # The trace: the shape of the sound at the moment of the verdict.
+        # Only ever recorded when we were genuinely listening to this track —
+        # a trace claims "this is what it sounded like", and an invented one
+        # would make every honest one worthless.
+        live = _is_playing_now(artist, album, title)
+        trace = None
+        if live and VIS.enabled and VIS.trace.key == f"{artist}:::{album}:::{title}":
+            trace = VIS.trace.snapshot()
+
+        record = {
             "value": round(float(body["value"]), 2),
             "label": body["label"],
             "note": body.get("note", "").strip(),
             "date": datetime.now().isoformat(timespec="seconds"),
+            "trace": trace or previous.get("trace"),
+            # a local revision counter, so a queued op can never be overtaken by
+            # an older one that happened to reach the server later
+            "rev": int(previous.get("rev", 0)) + 1,
+            "public": bool(body.get("public", True)),
+            "notePublic": bool(body.get("notePublic", True)),
         }
+        entry["tracks"][title] = record
         _save(data)
-        return jsonify(ok=True, albumAvg=_album_avg(entry))
+        avg = _album_avg(entry)
+
+    # queued outside the lock, and the queue is local — the button is already done
+    SYNC.enqueue(
+        {
+            "op": "rate",
+            "artist": artist,
+            "album": album,
+            "title": title,
+            "value": record["value"],
+            "label": record["label"],
+            "note": record["note"],
+            "trace": record["trace"],
+            "rev": record["rev"],
+            "rated_at": record["date"],
+            "updated_at": record["date"],
+            "is_public": record["public"],
+            "note_public": record["notePublic"],
+            "provenance": "live" if live else "web",
+        }
+    )
+    return jsonify(ok=True, albumAvg=avg, sync=SYNC.status())
 
 
 @app.delete("/api/rate")
 def api_unrate():
     body = request.get_json(force=True)
-    key = _album_key(body["artist"], body["album"])
+    artist, album, title = body["artist"], body["album"], body["title"]
+    key = _album_key(artist, album)
+    removed = None
     with _ratings_lock:
         data = _load()
         entry = data["albums"].get(key)
-        if entry and body["title"] in entry["tracks"]:
-            del entry["tracks"][body["title"]]
+        if entry and title in entry["tracks"]:
+            removed = entry["tracks"].pop(title)
             if not entry["tracks"]:
                 del data["albums"][key]
             _save(data)
-    return jsonify(ok=True)
+
+    if removed is not None:
+        SYNC.enqueue(
+            {
+                "op": "unrate",
+                "artist": artist,
+                "album": album,
+                "title": title,
+                "rev": int(removed.get("rev", 0)) + 1,
+            }
+        )
+    return jsonify(ok=True, sync=SYNC.status())
 
 
 @app.get("/api/library")
@@ -272,6 +425,92 @@ def api_library():
         )
     albums.sort(key=lambda a: a["latest"], reverse=True)
     return jsonify(albums=albums)
+
+
+# -------------------------------------------------------------- visualizer ----
+
+
+@app.get("/api/visual")
+def api_visual():
+    return jsonify(VIS.status())
+
+
+@app.post("/api/visual")
+def api_visual_toggle():
+    on = bool((request.get_json(silent=True) or {}).get("on", True))
+    return jsonify(VIS.enable(on))
+
+
+@app.get("/api/spectrum")
+def api_spectrum():
+    """Sixteen bands, streamed.
+
+    Server-sent events rather than a socket: the page stays a dumb consumer, no
+    Web Audio, no permission prompt, and if this connection dies the widget
+    carries on completely unaffected.
+    """
+    def frames():
+        while True:
+            if VIS.enabled and VIS.status()["available"]:
+                bands = VIS.bands()
+            else:
+                # not listening — send the honest procedural shape instead
+                with _now_lock:
+                    snap = dict(_now)
+                bands = (
+                    procedural_bands(snap.get("position", 0), snap.get("duration", 0))
+                    if snap.get("active") and snap.get("playing")
+                    else []
+                )
+            yield f"data: {json.dumps(bands)}\n\n"
+            time.sleep(1 / 24)
+
+    return app.response_class(
+        frames(),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# ----------------------------------------------------------------- account ----
+# All of these are local calls into the sync engine. The ones that touch the
+# network say so, and none of them are on the path of rating a song.
+
+
+@app.get("/api/account")
+def api_account():
+    return jsonify(SYNC.status())
+
+
+@app.post("/api/account/pair")
+def api_account_pair():
+    """Ask the server for a code, then open the browser at the link page —
+    which is where the actual signing in happens."""
+    try:
+        pairing = SYNC.begin_pairing()
+    except Exception as exc:
+        return jsonify(ok=False, error=f"couldn't reach the server ({exc.__class__.__name__})"), 502
+    webbrowser.open(pairing["url"])
+    return jsonify(ok=True, **pairing, sync=SYNC.status())
+
+
+@app.post("/api/account/cancel")
+def api_account_cancel():
+    SYNC.cancel_pairing()
+    return jsonify(ok=True, sync=SYNC.status())
+
+
+@app.post("/api/account/signout")
+def api_account_signout():
+    SYNC.sign_out()
+    return jsonify(ok=True, sync=SYNC.status())
+
+
+@app.post("/api/account/sync")
+def api_account_sync():
+    on = bool((request.get_json(silent=True) or {}).get("on", True))
+    SYNC.set_enabled(on)
+    return jsonify(ok=True, sync=SYNC.status())
 
 
 def _acquire_singleton():
@@ -303,7 +542,7 @@ def _run_widget(lock_socket):
 
     threading.Thread(target=_run_flask, args=(lock_socket,), daemon=True).start()
     window = webview.create_window(
-        "rateify",
+        "noskips",
         f"http://127.0.0.1:{PORT}",
         width=420,
         height=560,
@@ -312,6 +551,8 @@ def _run_widget(lock_socket):
         resizable=True,
         background_color="#f0e9d8",
         transparent=True,  # lets the tucked-away mini bar show the desktop through it
+        min_size=(150, 40),  # default is (200, 100) — taller than our 40px mini bar,
+        # so the window used to refuse to shrink past 100px, leaving blank space below it
     )
 
     def close():
@@ -331,7 +572,7 @@ def _run_widget(lock_socket):
 if __name__ == "__main__":
     lock_socket = _acquire_singleton()
     if lock_socket is None:
-        # another Rateify already holds the port — just bring up its page
+        # another noskips already holds the port — just bring up its page
         webbrowser.open(f"http://127.0.0.1:{PORT}")
         sys.exit(0)
     threading.Thread(target=_worker, daemon=True).start()
@@ -340,5 +581,5 @@ if __name__ == "__main__":
     except Exception:
         # no WebView2 runtime? fall back to the browser like the old days
         threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{PORT}")).start()
-        print(f"Rateify spinning at http://127.0.0.1:{PORT}")
+        print(f"noskips spinning at http://127.0.0.1:{PORT}")
         _run_flask(lock_socket)

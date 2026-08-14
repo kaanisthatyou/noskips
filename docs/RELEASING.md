@@ -1,4 +1,4 @@
-# Releasing Rateify
+# Releasing noskips
 
 ## Build the artifacts
 
@@ -7,16 +7,27 @@ powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 ```
 
 Produces in `release/`:
-- `Rateify-Setup-<version>.exe` — per-user installer (no admin needed)
-- `Rateify-<version>-portable.zip` — unzip-and-run
+- `noskips-Setup-<version>.exe` — per-user installer (no admin needed)
+- `noskips-<version>-portable.zip` — unzip-and-run
 
 Bump the version in **two places** first: `__version__` in `app.py` and
 `MyAppVersion` in `installer.iss`.
 
+## Upgrading from Rateify
+
+The installer uses a **new AppId**, so it installs alongside an existing
+Rateify rather than over it. On first run the app copies
+`%LOCALAPPDATA%\Programs\Rateify\data\ratings.json` and `covers\` into its own
+folder (`_migrate_from_rateify` in `app.py`) and drops a
+`data\.migrated-from-rateify` marker so it only ever happens once.
+
+The old install is left completely untouched — users uninstall Rateify
+themselves once they've confirmed their shelf came across.
+
 ## GitHub release
 
 ```
-git tag v1.0.0
+git tag v2.0.0
 git push origin main --tags
 ```
 

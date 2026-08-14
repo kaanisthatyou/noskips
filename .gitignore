@@ -3,9 +3,16 @@ __pycache__/
 build/
 dist/
 release/
+noskips.exe
+# left over from before the rename
 Rateify.exe
 *.zip
 
 # personal library — your ratings stay yours
 data/
 covers/
+
+# server
+*.db
+.env
+.pytest_cache/

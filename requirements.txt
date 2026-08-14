@@ -1,7 +1,18 @@
+# The Windows widget. The server has its own (server/requirements.txt for local
+# work, api/requirements.txt for the Vercel build).
+# Platform markers so a non-Windows checkout can still install and run the tests.
 flask>=3.0
-pywebview>=6.0
-winrt-runtime>=3.0
-winrt-Windows.Media.Control>=3.0
-winrt-Windows.Storage.Streams>=3.0
-winrt-Windows.Foundation>=3.0
-winrt-Windows.Foundation.Collections>=3.0
+requests>=2.31
+pywebview>=6.0; sys_platform == "win32"
+winrt-runtime>=3.0; sys_platform == "win32"
+winrt-Windows.Media.Control>=3.0; sys_platform == "win32"
+winrt-Windows.Storage.Streams>=3.0; sys_platform == "win32"
+winrt-Windows.Foundation>=3.0; sys_platform == "win32"
+winrt-Windows.Foundation.Collections>=3.0; sys_platform == "win32"
+
+# Listening to the speakers, for the visualiser and the trace. Genuinely
+# optional: audio.py imports them lazily and reports "not available" if they're
+# missing, so the widget runs fine without them. Build with NOSKIPS_NO_AUDIO=1
+# to leave them out of the exe (~15-25MB smaller).
+numpy>=1.26; sys_platform == "win32"
+pyaudiowpatch>=0.2.12; sys_platform == "win32"

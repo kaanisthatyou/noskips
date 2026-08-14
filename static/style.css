@@ -1,4 +1,4 @@
-/* ============ rateify — bedroom-label zine ============ */
+/* ============ noskips — bedroom-label zine ============ */
 
 @font-face {
   font-family: "Special Elite";
@@ -97,6 +97,9 @@ body::after {
   z-index: 100;
 }
 body.webview .win-ctls { display: flex; }
+/* collapsed body has no top padding, so the fixed-position buttons need
+   their own offset to sit centered in the 40px mini bar instead of low */
+body.collapsed .win-ctls { top: 7px; }
 .win-ctls button {
   font: inherit;
   font-size: 13px;
@@ -176,7 +179,7 @@ body.collapsed header {
   width: 100%;
   max-width: none;
   height: 40px;
-  padding: 0 20px 0 0;
+  padding: 0 74px 0 0; /* clear the win-ctls buttons so the pill doesn't run under them */
   margin-bottom: 0;
 }
 
@@ -238,30 +241,93 @@ body.collapsed .mini-now:hover { background: rgba(255, 255, 255, .22); }
 }
 .mini-artist { font-size: 12px; color: var(--soft); margin-top: -1px; }
 
-/* tiny animated equalizer — bounces while playing, sits low while paused */
-.mini-eq {
+/* ---------------------------------------------- tucked-away skins
+   Four ways for the mini bar to show a song. All four are driven from
+   drawSkin() in app.js through two custom properties, --spin and --wound (or
+   --arm / --fed), so the animation loop only ever writes a variable and the
+   browser does the rest. */
+.mini-skin {
   display: none;
-  align-items: flex-end;
-  gap: 3px;
-  height: 18px;
+  align-items: center;
+  height: 22px;
   flex-shrink: 0;
   position: relative;
   z-index: 1;
 }
-.mini-now.has-track .mini-eq { display: flex; }
-.mini-eq i {
-  width: 4px;
-  height: 5px;
+.mini-now.has-track .mini-skin { display: flex; }
+
+/* --- the spool: a mini cassette, tape winding left to right --- */
+.sk-spool { display: flex; align-items: center; gap: 2px; }
+.sk-spool .hub {
+  width: 13px; height: 13px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background:
+    conic-gradient(from var(--spin, 0deg),
+      var(--ink) 0 12deg, transparent 12deg 90deg,
+      var(--ink) 90deg 102deg, transparent 102deg 180deg,
+      var(--ink) 180deg 192deg, transparent 192deg 270deg,
+      var(--ink) 270deg 282deg, transparent 282deg 360deg);
+}
+/* the tape itself is the progress bar — it thickens as the song plays on */
+.sk-spool .tape {
+  width: 16px;
+  height: calc(3px + var(--wound, 0) * 7px);
+  background: var(--stamp);
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+/* --- the groove: a tiny record with the arm tracking inward --- */
+.sk-groove { position: relative; width: 24px; height: 24px; }
+.sk-groove .disc {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, var(--stamp) 0 22%, transparent 22%),
+    repeating-radial-gradient(circle, var(--ink) 0 1px, transparent 1px 3px);
+  transform: rotate(var(--spin, 0deg));
+}
+.sk-groove .arm {
+  position: absolute;
+  top: 1px; right: 1px;
+  width: 2px; height: 15px;
+  background: var(--ink);
+  transform-origin: top center;
+  /* swings from the rim toward the label as you get further in */
+  transform: rotate(var(--arm, -18deg));
+  transition: transform .4s linear;
+}
+
+/* --- the hiss: sixteen bands of what's actually coming out --- */
+.sk-hiss { display: flex; align-items: flex-end; gap: 1px; height: 22px; }
+.sk-hiss i {
+  width: 2px;
+  height: 6px;
   background: var(--stamp);
   border-radius: 1px;
+  transition: height .07s linear;
 }
-.mini-now.playing .mini-eq i { animation: eq-bounce .9s ease-in-out infinite; }
-.mini-eq i:nth-child(1) { animation-delay: 0s; }
-.mini-eq i:nth-child(2) { animation-delay: .2s; }
-.mini-eq i:nth-child(3) { animation-delay: .4s; }
-@keyframes eq-bounce {
-  0%, 100% { height: 5px; }
-  50% { height: 18px; }
+
+/* --- the ticker: the title typed onto receipt paper feeding out --- */
+.sk-ticker { width: 62px; overflow: hidden; }
+.sk-ticker .strip {
+  display: block;
+  padding: 2px 0;
+  background: repeating-linear-gradient(90deg, var(--card) 0 4px, transparent 4px 5px);
+  border-top: 1px dashed var(--ink);
+  border-bottom: 1px dashed var(--ink);
+  /* the strip feeds out from the right as the song plays */
+  transform: translateX(calc(60% - var(--fed, 0%) * 0.6));
+}
+.sk-ticker b {
+  display: block;
+  font-size: 8px;
+  font-weight: normal;
+  white-space: nowrap;
+  color: var(--ink);
 }
 
 /* corner drag handle — the mini bar itself is click-to-expand, so dragging
@@ -419,6 +485,25 @@ main { width: 100%; max-width: 400px; }
 .artist { color: var(--stamp); font-size: 12px; margin-top: 2px; }
 .album  { color: var(--soft); font-size: 10.5px; margin-top: 1px; font-style: italic; }
 
+/* what the rest of the world made of it — a pencilled marginal note */
+.shared-line {
+  font-family: "Caveat", cursive;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--teal);
+  margin-top: 5px;
+}
+/* nobody has ever rated this. worth making a small fuss about. */
+.shared-line.first {
+  color: var(--stamp);
+  transform: rotate(-1.2deg);
+  animation: firstpress .5s ease-out;
+}
+@keyframes firstpress {
+  0%   { opacity: 0; transform: rotate(-6deg) scale(1.15); }
+  100% { opacity: 1; transform: rotate(-1.2deg) scale(1); }
+}
+
 .progress-zone {
   display: flex;
   align-items: center;
@@ -572,6 +657,34 @@ main { width: 100%; max-width: 400px; }
   outline: none;
 }
 .note:focus { box-shadow: 3px 3px 0 var(--teal); }
+
+/* what gets shared, decided per rating. two rubber stamps: pressed = shared */
+.privacy {
+  display: flex;
+  gap: 7px;
+  justify-content: center;
+  margin-top: 9px;
+}
+.privbtn {
+  font: inherit;
+  font-size: 10.5px;
+  letter-spacing: .08em;
+  padding: 3px 10px;
+  color: var(--soft);
+  background: var(--card);
+  border: 2px dashed var(--line);
+  border-radius: 16px 7px 15px 8px / 8px 15px 7px 16px;
+  cursor: pointer;
+  transition: background .1s, color .1s, transform .1s, border-color .1s;
+}
+.privbtn.on {
+  color: var(--card);
+  background: var(--teal);
+  border-style: solid;
+  border-color: var(--ink);
+  transform: rotate(-1.5deg);
+}
+.privbtn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
 
 .save-btn {
   display: block;
@@ -748,6 +861,66 @@ main { width: 100%; max-width: 400px; }
 .swatch[data-theme="mint"]    { background: conic-gradient(from 45deg, #eaf3ec 0 33%, #e0654a 33% 66%, #2f8f6f 66% 100%); }
 .swatch[data-theme="berry"]   { background: conic-gradient(from 45deg, #f5e9ee 0 33%, #b5324f 33% 66%, #6a4c93 66% 100%); }
 .swatch[data-theme="ocean"]   { background: conic-gradient(from 45deg, #e8eef3 0 33%, #d9762b 33% 66%, #2470a0 66% 100%); }
+
+/* ------------------------------------------------ skins + listening */
+.skin-swatches { display: flex; gap: 8px; justify-content: center; margin-bottom: 6px; }
+.skinbtn {
+  font: inherit;
+  font-size: 15px;
+  width: 32px; height: 32px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 48% 52% 55% 45% / 55% 45% 50% 50%;
+  cursor: pointer;
+  transition: transform .1s, background .1s, color .1s;
+}
+.skinbtn:hover { transform: rotate(-6deg) scale(1.08); }
+.skinbtn.on { background: var(--teal); color: var(--card); transform: scale(1.12); }
+
+.listen { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 10px; }
+
+/* the trace: the shape of the sound when the verdict was stamped */
+.trace-line { display: block; width: 100%; height: 22px; margin-top: 6px; overflow: visible; }
+.trace-line polyline {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ------------------------------------------------ account */
+.account { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.acct-note { font-size: 10.5px; color: var(--soft); line-height: 1.45; max-width: 260px; }
+.acct-who { font-size: 12.5px; color: var(--ink); }
+.acct-err { font-size: 10.5px; color: var(--stamp); max-width: 260px; }
+/* the pairing code, typed out like it came off a receipt */
+.acct-code {
+  font-size: 22px;
+  letter-spacing: .22em;
+  padding: 5px 14px;
+  border: 2px dashed var(--line);
+  border-radius: var(--wobble);
+}
+.acct-btn {
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: .08em;
+  padding: 6px 16px;
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: var(--wobble);
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: pointer;
+  transition: transform .08s, box-shadow .08s;
+}
+.acct-btn:hover { transform: rotate(-1.5deg); }
+.acct-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+.acct-btn.go { background: var(--stamp); color: var(--card); }
+.acct-btn.on { background: var(--teal); color: var(--card); }
 
 /* ------------------------------------------------ misc */
 @keyframes drop-in {

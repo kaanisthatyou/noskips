@@ -1,19 +1,19 @@
-# Builds Rateify.exe, a portable zip, and (if Inno Setup is installed) the installer.
+# Builds noskips.exe, a portable zip, and (if Inno Setup is installed) the installer.
 # Usage:  powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
 $version = (Select-String -Path app.py -Pattern '__version__ = "(.+)"').Matches[0].Groups[1].Value
-Write-Host "Building Rateify $version"
+Write-Host "Building noskips $version"
 
-python -m PyInstaller Rateify.spec --noconfirm
+python -m PyInstaller noskips.spec --noconfirm
 
 New-Item -ItemType Directory -Force release | Out-Null
-Copy-Item dist\Rateify.exe .\Rateify.exe -Force
+Copy-Item dist\noskips.exe .\noskips.exe -Force
 
 Compress-Archive -Force `
-    -Path dist\Rateify.exe, README.md, LICENSE `
-    -DestinationPath "release\Rateify-$version-portable.zip"
+    -Path dist\noskips.exe, README.md, LICENSE `
+    -DestinationPath "release\noskips-$version-portable.zip"
 
 $iscc = @(
     "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
