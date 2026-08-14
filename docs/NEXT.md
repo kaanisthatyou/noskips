@@ -34,9 +34,18 @@ DATABASE_URL=<neon pooled url> python -m alembic upgrade head
 cover art stays blank, duplicate spellings never merge, and — since the same
 tick now does the housekeeping — spent rate-limit rows never get pruned.
 
-**The one that will bite you:** the widget defaults to
-`https://noskips.vercel.app`, which doesn't exist. After deploying, set
-`NOSKIPS_SERVER` to your real URL or pairing silently fails against nothing.
+**The one that will bite you:** the widget points at
+`https://noskips.vercel.app`, which doesn't exist. `NOSKIPS_SERVER` overrides
+it — but only on a machine where you set it, and nobody who downloads the exe
+will. The literal in `sync.py` is what ships:
+
+```python
+DEFAULT_SERVER = os.environ.get("NOSKIPS_SERVER", "https://noskips.vercel.app")
+```
+
+So: deploy first, change that fallback to the real URL, *then* build the
+release. Ship it before and every download pairs against nothing, silently,
+and the only fix is a new release.
 
 **The second one:** `GITHUB_REPO` defaults to `kaanisthatyou/noskips`. The repo
 is still called `rateify`, so until you rename it (§5) or set this variable,
