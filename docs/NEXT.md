@@ -1,6 +1,6 @@
 # What's left
 
-Handoff note. Branch `noskips-social`, 293 tests green, nothing pushed. Phases
+Handoff note. Branch `noskips-social`, 297 tests green, nothing pushed. Phases
 0–5 are built and verified — including the website, which was previously
 planned-only. What remains is almost entirely **credentials and your machine**:
 the code no longer has a hole in it that I can close without your accounts.
@@ -94,7 +94,7 @@ credentials I don't have:
   existing account.
 - **Real email.** Everything ran on the console backend. SMTP delivery,
   deliverability and link formatting in a real client are unverified.
-- **Postgres.** All 293 tests run on SQLite. The models stick to portable types
+- **Postgres.** All 297 tests run on SQLite. The models stick to portable types
   and the migrations apply cleanly, but nothing has touched Neon. Search uses
   `LIKE` with an escaped needle, which behaves the same on both — but it is a
   sequential scan, so if the index ever gets big, that's the first thing to
