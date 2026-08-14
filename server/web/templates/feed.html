@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}feed — noskips{% endblock %}
+
+{% block body %}
+<h2>the feed</h2>
+<p class="muted">everyone you follow, newest first. no ranking, no suggestions.</p>
+
+{% if verdicts %}
+  <div class="verdicts">
+    {% for r in verdicts %}{{ m.verdict(r, viewer=viewer) }}{% endfor %}
+  </div>
+{% else %}
+  <div class="empty">
+    <p class="empty-big">quiet in here</p>
+    <p class="empty-small">follow a few people and their verdicts land here</p>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block script %}<script src="/static/web.js"></script>{% endblock %}

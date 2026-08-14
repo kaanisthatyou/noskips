@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ title }} — {{ artist }} — noskips{% endblock %}
+{% block og_title %}{{ title }} by {{ artist }}{% endblock %}
+{% block og_desc %}average {{ average|score }} across {{ works|length }} rated tracks on noskips{% endblock %}
+{% block og_extra %}
+  {%- if og_image("/og/album/" ~ works[0].album_key ~ ".png") %}
+    <meta property="og:image" content="{{ og_image('/og/album/' ~ works[0].album_key ~ '.png') }}">
+  {%- endif %}
+{% endblock %}
+
+{% block body %}
+<div class="card">
+  <div class="album-head">
+    {% if cover %}
+      <img class="album-art" src="{{ cover }}" alt="">
+    {% else %}
+      <div class="album-art" style="display:grid;place-items:center;font-size:48px">♪</div>
+    {% endif %}
+
+    <div style="flex:1;min-width:200px">
+      <h1>{{ title }}</h1>
+      <p class="verdict-artist" style="font-size:15px">{{ artist }}</p>
+      <p class="big-avg">{{ average|score }}</p>
+      <p class="muted">{{ works|length }} rated track{{ works|length != 1 and "s" or "" }}</p>
+      {% if certified %}
+        <p style="margin-top:10px"><span class="certified">CERTIFIED NO-SKIPS</span></p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="tear"></div>
+
+  {# the light/just/strong scale gives 28 distinct values; ten columns is what
+     people actually recognise, so the thirds fold into their nearest whole #}
+  <p class="muted">how it landed</p>
+  <div class="histogram">
+    {% for n, count, pct in histogram %}
+      <div class="hbar {% if not count %}empty{% endif %}" title="{{ count }} at {{ n }}">
+        <i style="height:{{ pct }}%"></i>
+        <b>{{ n }}</b>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="tear"></div>
+
+  <div class="tracklist">
+    {% for w in works %}
+      <div class="trackrow">
+        <span class="t-name">{{ w.display_title }}</span>
+        <span class="t-avg">{{ w.average|score }}</span>
+        <span class="t-count">{{ w.rating_count }} verdict{{ w.rating_count != 1 and "s" or "" }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if verdicts %}
+  <h2 style="margin:22px 0 4px">what people said</h2>
+  <div class="verdicts">
+    {% for r in verdicts %}{{ m.verdict(r, viewer=me, show_work=False) }}{% endfor %}
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block script %}<script src="/static/web.js"></script>{% endblock %}

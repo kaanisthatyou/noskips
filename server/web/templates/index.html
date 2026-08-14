@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}noskips — judge every song, keep receipts{% endblock %}
+
+{% block body %}
+{# Placeholder. The real landing page is the marketing site, which is planned
+   but deliberately not built yet — see docs/WEBSITE.md. #}
+<div class="card narrow">
+  <h2>judge every song. keep receipts.</h2>
+  <p class="hand">a tiny windows widget that shows what's playing and lets you
+    stamp a verdict on it — then a shelf, on the web, with your name on it.</p>
+
+  <div class="tear"></div>
+
+  <p class="muted">a song has no page here until somebody rates it. no scraped
+    catalog, no empty pages with a zero in them. if nobody's stamped it yet,
+    you can be its first press.</p>
+
+  <div class="row" style="margin-top:16px">
+    <a class="btn go" href="/signup">start a shelf</a>
+    <a class="btn" href="/login">sign in</a>
+  </div>
+</div>
+{% endblock %}

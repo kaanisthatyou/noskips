@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ mode == "signup" and "sign up" or "sign in" }} — noskips{% endblock %}
+
+{% block body %}
+<div class="card narrow">
+  <h2>{{ mode == "signup" and "start a shelf" or "sign in" }}</h2>
+
+  {% for provider in config.OAUTH_PROVIDERS %}
+    <a class="btn" style="margin-top:10px" href="/auth/{{ provider }}?next={{ next_url|urlencode }}">
+      continue with {{ provider }}
+    </a>
+  {% endfor %}
+
+  {% if config.OAUTH_PROVIDERS %}<div class="tear"></div>{% endif %}
+
+  <form id="auth-form" class="stack" data-mode="{{ mode }}" data-next="{{ next_url }}">
+    <div>
+      <label for="email">email</label>
+      <input id="email" type="email" autocomplete="email" required>
+    </div>
+    <div>
+      <label for="password">password</label>
+      <input id="password" type="password" required
+             autocomplete="{{ mode == 'signup' and 'new-password' or 'current-password' }}">
+      {% if mode == "signup" %}<p class="muted">ten characters or more. a phrase beats a puzzle.</p>{% endif %}
+    </div>
+    <button class="btn go" type="submit">{{ mode == "signup" and "sign up" or "sign in" }}</button>
+    <p class="msg" id="auth-msg"></p>
+  </form>
+
+  <div class="tear"></div>
+  {% if mode == "signup" %}
+    <p class="muted">already have one? <a href="/login">sign in</a></p>
+  {% else %}
+    <p class="muted">new here? <a href="/signup">start a shelf</a> ·
+      <a href="#" id="forgot">forgot your password?</a></p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block script %}<script src="/static/web.js"></script>{% endblock %}

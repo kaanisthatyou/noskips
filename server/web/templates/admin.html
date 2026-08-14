@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}moderation — noskips{% endblock %}
+
+{% block body %}
+{% if read_only %}
+  <p class="banner">the site is READ-ONLY right now — no writes are getting through</p>
+{% endif %}
+
+<div class="card">
+  <h2>moderation queue</h2>
+  <p class="muted">{{ rows|length }} open</p>
+
+  {% for row in rows %}
+    <div class="report-row">
+      <p class="report-reason">“{{ row.report.reason }}”</p>
+      <p class="muted">
+        reported {{ row.report.created_at|day }}
+        {% if row.subject %}· about <a href="/@{{ row.subject.handle }}">@{{ row.subject.handle }}</a>{% endif %}
+      </p>
+
+      {% if row.rating %}
+        <p style="margin-top:6px">
+          <strong>{{ row.rating.value|score }}</strong>
+          {{ row.rating.work.display_title }} — {{ row.rating.work.display_artist }}
+        </p>
+        {% if row.rating.note %}<p class="hand">“{{ row.rating.note }}”</p>{% endif %}
+      {% endif %}
+
+      <form method="post" action="/admin/act" class="row" style="margin-top:8px">
+        <input type="hidden" name="report_id" value="{{ row.report.id }}">
+        <button class="btn small" name="action" value="dismiss">dismiss</button>
+        {% if row.rating %}
+          <button class="btn small" name="action" value="hide">hide the verdict</button>
+        {% endif %}
+        <button class="btn small" name="action" value="ban" style="color:var(--stamp)">ban</button>
+      </form>
+    </div>
+  {% else %}
+    <p class="muted" style="margin-top:14px">nothing reported. good week.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ purpose == "reset" and "new password" or "confirming" }} — noskips{% endblock %}
+
+{% block body %}
+<div class="card narrow" id="token-card" data-purpose="{{ purpose }}" data-token="{{ token }}">
+  {% if purpose == "reset" %}
+    <h2>pick a new password</h2>
+    <form id="reset-form" class="stack">
+      <div>
+        <label for="password">new password</label>
+        <input id="password" type="password" autocomplete="new-password" required>
+      </div>
+      <button class="btn go" type="submit">set it</button>
+      <p class="msg" id="token-msg"></p>
+    </form>
+  {% else %}
+    <h2>confirming your address…</h2>
+    <p class="msg" id="token-msg"></p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block script %}<script src="/static/web.js"></script>{% endblock %}

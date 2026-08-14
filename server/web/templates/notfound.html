@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}nothing here — noskips{% endblock %}
+
+{% block body %}
+<div class="empty">
+  <p class="empty-big">nothing here</p>
+  {# the honest 404 for this product: usually it means nobody has rated it yet,
+     which is an invitation rather than an error #}
+  <p class="empty-small">either that page doesn't exist, or nobody has stamped
+    this one yet.</p>
+  <p class="first-press-call">be the first press ✦</p>
+  <p class="empty-small" style="margin-top:14px">
+    <a href="/">back to the start</a>
+  </p>
+</div>
+{% endblock %}

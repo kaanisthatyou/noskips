@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}link a device — noskips{% endblock %}
+{% block body %}
+<div class="card narrow stack">
+  {% if error %}
+    <h2>that didn't work</h2>
+    <p>{{ error }}</p>
+    <p class="muted">open noskips on your computer and try again — codes only
+      last ten minutes.</p>
+
+  {% elif not me %}
+    <h2>sign in to link this device</h2>
+    <div class="code">{{ pretty_code }}</div>
+    <p class="muted">you're about to connect a copy of noskips running on
+      <strong>{{ pairing.device_name or "a windows pc" }}</strong> to your account.</p>
+    <div class="tear"></div>
+    {% for provider in providers %}
+      <a class="btn" href="/auth/{{ provider }}?next={{ next_url|urlencode }}">continue with {{ provider }}</a>
+    {% endfor %}
+    <a class="btn" href="/login?next={{ next_url|urlencode }}">continue with email</a>
+
+  {% elif done %}
+    <h2>linked ✦</h2>
+    <p>{{ device_name }} is connected to
+      <strong>{{ me.handle and "@" ~ me.handle or "your account" }}</strong>.</p>
+    <p class="muted">go back to the widget — it'll notice within a couple of
+      seconds, and everything already on your shelf goes up with it. your
+      ratings stay on your machine either way.</p>
+    {% if not me.handle %}
+      <a class="btn go" href="/welcome">claim your handle</a>
+    {% endif %}
+
+  {% else %}
+    <h2>link this device?</h2>
+    <div class="code">{{ pretty_code }}</div>
+    <p>connect <strong>{{ pairing.device_name or "a windows pc" }}</strong>
+      {% if pairing.app_version %}(noskips {{ pairing.app_version }}){% endif %}
+      to <strong>{{ me.handle and "@" ~ me.handle or "your account" }}</strong>?</p>
+
+    <p class="warn">only continue if you <em>just</em> opened noskips on that
+      computer yourself. if somebody sent you this link or read you this code,
+      close this page — it would connect their copy to your account.</p>
+
+    <form method="post" action="/link">
+      <input type="hidden" name="code" value="{{ code }}">
+      <button class="btn go" type="submit">yes, link it</button>
+    </form>
+    <a class="btn" href="/">no, cancel</a>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,356 @@
+/* ============ noskips on the web — bedroom-label zine ============
+ *
+ * The widget's stylesheet (style.css) is deliberately left alone: it encodes a
+ * 400px always-on-top window and it's the thing people already like the look
+ * of. This is its sibling for a browser-sized page.
+ *
+ * The palette below is copied from style.css on purpose rather than imported —
+ * the cost is keeping ~60 lines of tokens in step, the benefit is that no web
+ * change can ever break the widget. If you change a colour, change it in both.
+ */
+
+@font-face {
+  font-family: "Special Elite";
+  src: url("/static/fonts/SpecialElite.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Caveat";
+  src: url("/static/fonts/Caveat.ttf") format("truetype");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+:root {
+  --paper: #f0e9d8;
+  --card: #fbf6ea;
+  --ink: #241f17;
+  --soft: #857c66;
+  --stamp: #cf4520;
+  --teal: #2f6f66;
+  --line: #d8cdb4;
+  --wobble: 14px 18px 12px 20px / 19px 12px 21px 13px;
+  --shadow: 4px 4px 0 var(--ink);
+}
+
+body.theme-noir {
+  --paper: #1c1a17; --card: #262320; --ink: #ede6d6; --soft: #9b9284;
+  --stamp: #e2572c; --teal: #4fb3a3; --line: #3a352c;
+}
+body.theme-mint {
+  --paper: #eaf3ec; --card: #f6fbf7; --ink: #1f2e26; --soft: #6f8b7c;
+  --stamp: #e0654a; --teal: #2f8f6f; --line: #cfe3d6;
+}
+body.theme-berry {
+  --paper: #f5e9ee; --card: #fdf6f8; --ink: #2c1620; --soft: #8c6a76;
+  --stamp: #b5324f; --teal: #6a4c93; --line: #e3cdd6;
+}
+body.theme-ocean {
+  --paper: #e8eef3; --card: #f5f9fb; --ink: #14232e; --soft: #5f7a8a;
+  --stamp: #d9762b; --teal: #2470a0; --line: #cdd9e2;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Special Elite", "Courier New", ui-monospace, monospace;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* paper grain over everything */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  opacity: .07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+a { color: inherit; }
+
+/* ------------------------------------------------ shell */
+.wrap { width: min(880px, 100%); margin: 0 auto; padding: 18px 16px 60px; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.wordmark {
+  font-size: 26px;
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+.topbar nav { display: flex; gap: 12px; margin-left: auto; font-size: 13px; }
+.topbar nav a { color: var(--soft); text-decoration: none; }
+.topbar nav a:hover, .topbar nav a.on { color: var(--ink); text-decoration: underline wavy; }
+
+.card {
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: var(--wobble);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  animation: drop-in .45s cubic-bezier(.2, 1.4, .4, 1) both;
+}
+@keyframes drop-in {
+  from { opacity: 0; transform: translateY(-10px) rotate(-1deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+.tear {
+  height: 2px;
+  margin: 14px 0;
+  background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 12px);
+}
+
+h1, h2, h3 { font-weight: normal; line-height: 1.2; }
+h2 { font-size: 21px; }
+h3 { font-size: 16px; }
+.muted { color: var(--soft); font-size: 12.5px; }
+.hand { font-family: "Caveat", cursive; font-size: 17px; line-height: 1.35; }
+
+/* ------------------------------------------------ buttons + fields */
+.btn {
+  display: inline-block;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: .08em;
+  padding: 8px 16px;
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: var(--wobble);
+  box-shadow: 3px 3px 0 var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform .08s, box-shadow .08s;
+}
+.btn:hover { transform: rotate(-1.2deg); }
+.btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+.btn.go { background: var(--stamp); color: var(--card); }
+.btn.on { background: var(--teal); color: var(--card); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.small { font-size: 11px; padding: 5px 11px; box-shadow: 2px 2px 0 var(--ink); }
+
+input[type="text"], input[type="email"], input[type="password"], textarea {
+  font: inherit;
+  font-size: 15px;
+  width: 100%;
+  padding: 9px 11px;
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 10px 14px 9px 15px / 14px 9px 15px 10px;
+  outline: none;
+}
+input:focus, textarea:focus { box-shadow: 3px 3px 0 var(--teal); }
+label { display: block; font-size: 11px; letter-spacing: .1em; color: var(--soft); margin: 12px 0 5px; }
+
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.msg { font-size: 13px; }
+.msg.bad { color: var(--stamp); }
+.msg.good { color: var(--teal); }
+
+.warn {
+  border-left: 4px solid var(--stamp);
+  padding-left: 11px;
+  font-size: 13px;
+}
+
+/* the device pairing code, set like it came off a receipt */
+.code {
+  font-size: 30px;
+  letter-spacing: .22em;
+  text-align: center;
+  padding: 10px;
+  border: 2px dashed var(--line);
+  border-radius: var(--wobble);
+}
+
+.narrow { width: min(430px, 100%); margin: 0 auto; }
+
+/* ------------------------------------------------ profile */
+.profile-head { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+/* generated from avatar_seed, so there are no uploads to moderate */
+.avatar {
+  width: 74px;
+  height: 74px;
+  flex: none;
+  border: 2px solid var(--ink);
+  border-radius: 46% 54% 52% 48% / 53% 47% 55% 45%;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.handle { font-size: 25px; }
+.tagline { color: var(--soft); font-size: 13px; }
+
+.stats { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 14px; }
+.stat { text-align: center; }
+.stat b { display: block; font-size: 23px; font-weight: normal; }
+.stat span { font-size: 10.5px; letter-spacing: .1em; color: var(--soft); }
+.stat.press b { color: var(--stamp); }
+
+/* ------------------------------------------------ verdicts */
+.verdicts { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+
+.verdict {
+  display: flex;
+  gap: 14px;
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: var(--wobble);
+  box-shadow: var(--shadow);
+  padding: 13px 15px;
+}
+.verdict:nth-child(odd) { transform: rotate(.35deg); }
+.verdict:nth-child(even) { transform: rotate(-.35deg); }
+
+.verdict-cover {
+  width: 66px; height: 66px;
+  flex: none;
+  object-fit: cover;
+  border: 2px solid var(--ink);
+  background: var(--line);
+}
+.verdict-cover.placeholder { display: grid; place-items: center; font-size: 22px; color: var(--soft); }
+.verdict-body { flex: 1; min-width: 0; }
+.verdict-title { font-size: 15px; }
+.verdict-title a { text-decoration: none; }
+.verdict-title a:hover { text-decoration: underline wavy; }
+.verdict-artist { color: var(--stamp); font-size: 12px; }
+.verdict-note { font-family: "Caveat", cursive; font-size: 17px; margin-top: 6px; }
+.verdict-note.hidden-note { color: var(--soft); font-style: italic; font-size: 14px; }
+.verdict-foot { display: flex; gap: 10px; align-items: center; margin-top: 8px; font-size: 10.5px; color: var(--soft); }
+
+/* the number, stamped rather than printed */
+.score {
+  flex: none;
+  align-self: flex-start;
+  min-width: 52px;
+  text-align: center;
+  padding: 5px 6px;
+  color: var(--stamp);
+  border: 2px solid var(--stamp);
+  border-radius: 45% 55% 50% 50% / 55% 45% 55% 45%;
+  transform: rotate(-6deg);
+}
+.score b { display: block; font-size: 21px; font-weight: normal; }
+.score span { font-size: 8.5px; letter-spacing: .05em; }
+
+/* stamped while it was genuinely playing */
+.live-mark { color: var(--teal); }
+
+/* the trace — 240 amplitude samples frozen at the moment of the verdict */
+.trace-line {
+  display: block;
+  width: 100%;
+  height: 26px;
+  margin-top: 8px;
+  opacity: .85;
+}
+.trace-line polyline {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* quiet on purpose — always reachable, never the loudest thing on the card */
+.report-btn {
+  font: inherit;
+  font-size: 11px;
+  color: var(--soft);
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: .5;
+}
+.report-btn:hover { opacity: 1; color: var(--stamp); }
+
+/* ------------------------------------------------ moderation */
+.report-row {
+  border-bottom: 1px dashed var(--line);
+  padding: 12px 0;
+}
+.report-reason { font-family: "Caveat", cursive; font-size: 17px; }
+.banner {
+  background: var(--stamp);
+  color: var(--card);
+  text-align: center;
+  padding: 7px;
+  font-size: 12.5px;
+  letter-spacing: .05em;
+}
+
+/* ------------------------------------------------ album */
+.album-head { display: flex; gap: 20px; flex-wrap: wrap; }
+.album-art {
+  width: 190px; height: 190px;
+  flex: none;
+  object-fit: cover;
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow);
+  background: var(--line);
+}
+.big-avg { font-size: 46px; color: var(--stamp); }
+
+.certified {
+  display: inline-block;
+  font-size: 11px;
+  letter-spacing: .12em;
+  padding: 5px 12px;
+  color: var(--card);
+  background: var(--stamp);
+  border: 2px solid var(--ink);
+  border-radius: var(--wobble);
+  transform: rotate(-3deg);
+}
+
+/* the 1-10 scale, drawn as ten hand-inked columns */
+.histogram { display: flex; align-items: flex-end; gap: 5px; height: 96px; margin-top: 14px; }
+.hbar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 4px; }
+.hbar i {
+  display: block;
+  width: 100%;
+  background: var(--teal);
+  border: 2px solid var(--ink);
+  border-radius: 6px 9px 5px 8px / 8px 5px 9px 6px;
+  min-height: 3px;
+}
+.hbar b { font-size: 10px; font-weight: normal; color: var(--soft); }
+.hbar.empty i { background: transparent; border-style: dashed; border-color: var(--line); }
+
+.tracklist { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+.trackrow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 4px;
+  border-bottom: 1px dashed var(--line);
+}
+.trackrow .t-name { flex: 1; min-width: 0; font-size: 14px; }
+.trackrow .t-avg { color: var(--stamp); font-size: 15px; }
+.trackrow .t-count { font-size: 10px; color: var(--soft); min-width: 62px; text-align: right; }
+
+/* ------------------------------------------------ empty + errors */
+.empty { text-align: center; padding: 40px 20px; }
+.empty-big { font-size: 22px; }
+.empty-small { color: var(--soft); font-size: 13px; margin-top: 6px; }
+/* the first-press invitation: the best thing an empty page can say */
+.first-press-call { color: var(--stamp); font-size: 17px; transform: rotate(-1.2deg); display: inline-block; margin-top: 12px; }
+
+@media (max-width: 560px) {
+  .album-art { width: 100%; height: auto; aspect-ratio: 1; }
+  .verdict { flex-wrap: wrap; }
+}

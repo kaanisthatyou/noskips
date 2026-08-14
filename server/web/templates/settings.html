@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}settings — noskips{% endblock %}
+
+{% block body %}
+<div class="card narrow">
+  <h2>settings</h2>
+
+  <form id="profile-form" class="stack">
+    <div>
+      <label for="display_name">display name</label>
+      <input id="display_name" type="text" maxlength="40" value="{{ me.display_name or '' }}">
+    </div>
+    <div>
+      <label for="bio">bio</label>
+      <input id="bio" type="text" maxlength="200" value="{{ me.bio or '' }}">
+    </div>
+    <label class="row" style="letter-spacing:normal;font-size:13px;color:var(--ink)">
+      <input type="checkbox" id="is_private" style="width:auto" {{ me.is_private and "checked" or "" }}>
+      keep my shelf private
+    </label>
+    <label class="row" style="letter-spacing:normal;font-size:13px;color:var(--ink)">
+      <input type="checkbox" id="notes_private_default" style="width:auto"
+             {{ me.notes_private_default and "checked" or "" }}>
+      keep my notes private by default
+    </label>
+    <button class="btn go" type="submit">save</button>
+    <p class="msg" id="settings-msg"></p>
+  </form>
+
+  <div class="tear"></div>
+
+  <h3>linked devices</h3>
+  {% if devices %}
+    {% for d in devices %}
+      <div class="row" style="justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line)">
+        <div>
+          <div>{{ d.name }}</div>
+          <div class="muted">
+            noskips {{ d.app_version or "?" }} ·
+            {% if d.last_seen_at %}last synced {{ d.last_seen_at|day }}{% else %}never synced{% endif %}
+          </div>
+        </div>
+        <button class="btn small revoke-btn" data-device="{{ d.id }}">unlink</button>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="muted">no devices linked. open noskips on your pc and choose
+      “link this pc”.</p>
+  {% endif %}
+
+  <div class="tear"></div>
+
+  <h3>your data</h3>
+  <div class="row">
+    <a class="btn small" href="/v1/export" download="noskips-export.json">export everything</a>
+    <button class="btn small" id="signout-btn">sign out</button>
+  </div>
+  <p class="muted" style="margin-top:10px">deleting your account removes every
+    verdict you've stamped — and any song nobody else was standing behind goes
+    with them.</p>
+  <button class="btn small" id="delete-btn" style="margin-top:8px;color:var(--stamp)">
+    delete my account
+  </button>
+  <p class="msg" id="danger-msg"></p>
+</div>
+{% endblock %}
+
+{% block script %}<script src="/static/web.js"></script>{% endblock %}

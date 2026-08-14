@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}@{{ who.handle }} — noskips{% endblock %}
+{% block og_title %}@{{ who.handle }} on noskips{% endblock %}
+{% block og_desc %}
+  {%- if stats -%}
+    {{ stats.stamps }} verdicts · {{ stats.first_presses }} first presses
+  {%- else -%}a private shelf{%- endif -%}
+{% endblock %}
+{% block og_extra %}
+  {%- if not private and og_image("/og/u/" ~ who.handle ~ ".png") %}
+    <meta property="og:image" content="{{ og_image('/og/u/' ~ who.handle ~ '.png') }}">
+  {%- endif %}
+{% endblock %}
+
+{% block body %}
+<div class="card">
+  <div class="profile-head">
+    <div class="avatar" style="{{ avatar_style(who.avatar_seed) }}"></div>
+    <div>
+      <h1 class="handle">@{{ who.handle }}</h1>
+      {% if who.display_name and who.display_name != who.handle %}
+        <p class="tagline">{{ who.display_name }}</p>
+      {% endif %}
+      {% if who.bio %}<p class="hand">{{ who.bio }}</p>{% endif %}
+      <p class="muted">keeping receipts since {{ who.created_at|day }}</p>
+    </div>
+
+    {% if me and me.id != who.id and not private %}
+      <div style="margin-left:auto">
+        <button class="btn {% if following %}on{% endif %}" id="follow-btn"
+                data-handle="{{ who.handle }}" data-following="{{ following|lower }}">
+          {{ following and "following" or "follow" }}
+        </button>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if private %}
+    <div class="tear"></div>
+    <p class="muted">this shelf is private.</p>
+  {% else %}
+    <div class="stats">
+      <div class="stat"><b>{{ stats.stamps }}</b><span>STAMPS</span></div>
+      <div class="stat"><b>{{ stats.average|score }}</b><span>AVERAGE</span></div>
+      {# the headline flex: songs nobody in the world had rated before them #}
+      <div class="stat press"><b>{{ stats.first_presses }}</b><span>FIRST PRESSES</span></div>
+      <div class="stat"><b>{{ stats.followers }}</b><span>FOLLOWERS</span></div>
+    </div>
+  {% endif %}
+</div>
+
+{% if not private %}
+  {% if verdicts %}
+    <div class="verdicts">
+      {% for r in verdicts %}{{ m.verdict(r, viewer=me, show_who=False) }}{% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">
+      <p class="empty-big">bare shelves</p>
+      <p class="empty-small">no verdicts yet — go judge something</p>
+    </div>
+  {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block script %}<script src="/static/web.js"></script>{% endblock %}

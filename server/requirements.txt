@@ -1,0 +1,11 @@
+# noskips server — deployed separately from the widget, which keeps its own
+# (deliberately tiny) requirements.txt at the repo root.
+flask>=3.0
+sqlalchemy>=2.0
+alembic>=1.13
+psycopg[binary]>=3.1     # Postgres in production; the tests run on SQLite
+authlib>=1.3             # Google + Discord OAuth2
+argon2-cffi>=23.1        # password hashing
+itsdangerous>=2.2        # signed, expiring email tokens
+requests>=2.31           # MusicBrainz + Cover Art Archive lookups
+pillow>=10.0            # link-preview cards; optional, pages degrade without it

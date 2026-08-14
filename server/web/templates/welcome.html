@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}claim your name — noskips{% endblock %}
+
+{% block body %}
+<div class="card narrow">
+  <h2>claim your name</h2>
+  <p class="muted">this is how people find your shelf. letters, numbers and
+    underscores, 3–20 characters. you can change it once a month.</p>
+
+  <form id="handle-form" class="stack" data-next="{{ next_url }}" style="margin-top:14px">
+    <div>
+      <label for="handle">handle</label>
+      <div class="row">
+        <span style="font-size:20px">@</span>
+        <input id="handle" type="text" style="flex:1" autocomplete="off"
+               autocapitalize="off" spellcheck="false" required>
+      </div>
+    </div>
+    <p class="msg" id="handle-msg"></p>
+    <button class="btn go" type="submit">claim it</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block script %}<script src="/static/web.js"></script>{% endblock %}

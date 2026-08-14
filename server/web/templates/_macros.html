@@ -1,0 +1,54 @@
+{# One verdict, rendered the same everywhere it appears: a profile, an album
+   page, the feed. `show_who` toggles the byline — redundant on someone's own
+   shelf, essential in a feed. #}
+{% macro verdict(r, viewer=None, show_who=True, show_work=True) %}
+<article class="verdict">
+  {% if show_work %}
+    {% if r.work.cover_url %}
+      <img class="verdict-cover" src="{{ r.work.cover_url }}" alt="" loading="lazy">
+    {% else %}
+      <div class="verdict-cover placeholder">♪</div>
+    {% endif %}
+  {% endif %}
+
+  <div class="verdict-body">
+    {% if show_work %}
+      <p class="verdict-title">
+        <a href="/album/{{ r.work.album_key }}">{{ r.work.display_title }}</a>
+      </p>
+      <p class="verdict-artist">{{ r.work.display_artist }}</p>
+    {% endif %}
+
+    {% if r.note and (r.note_public or (viewer and viewer.id == r.user_id)) %}
+      <p class="verdict-note">“{{ r.note }}”</p>
+    {% elif r.note %}
+      <p class="verdict-note hidden-note">note kept private</p>
+    {% endif %}
+
+    {% if r.trace %}
+      {# the shape of the sound at the second they stamped it #}
+      <svg class="trace-line" viewBox="0 0 100 24" preserveAspectRatio="none"
+           role="img" aria-label="waveform of the moment this was stamped">
+        <polyline points="{{ r.trace|trace_points }}"></polyline>
+      </svg>
+    {% endif %}
+
+    <p class="verdict-foot">
+      {% if show_who %}<a href="/@{{ r.user.handle }}">@{{ r.user.handle }}</a>{% endif %}
+      <span>{{ r.rated_at|day }}</span>
+      {# stamped in the widget while the track was genuinely playing #}
+      {% if r.provenance == "live" %}<span class="live-mark" title="stamped while it was playing">♪ live</span>{% endif %}
+      {% if r.cosigns %}<span>✓ {{ r.cosigns|length }}</span>{% endif %}
+      {% if viewer and viewer.id != r.user_id %}
+        <button class="btn small cosign-btn" data-rating="{{ r.id }}">cosign</button>
+        <button class="report-btn" data-rating="{{ r.id }}" title="report this">⚑</button>
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="score">
+    <b>{{ r.value|score }}</b>
+    <span>{{ r.label }}</span>
+  </div>
+</article>
+{% endmacro %}
