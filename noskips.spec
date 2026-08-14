@@ -9,17 +9,24 @@ hiddenimports = []
 tmp_ret = collect_all('webview')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
-# audio.py imports these lazily, inside the function that opens the device, so
-# that a build without them still runs — just without listening. PyInstaller
-# can't see a lazy import, so they're named here explicitly.
+# The visualiser and the trace need numpy and pyaudiowpatch. audio.py imports
+# both lazily, inside the function that opens the device, so a build without
+# them still runs — just without listening.
 #
-# They cost roughly 15-25MB of exe (almost all numpy). Set NOSKIPS_NO_AUDIO=1
-# before building for a smaller exe: the visualiser then reports itself as
-# unavailable and the mini bar falls back to the procedural animation.
-if not os.environ.get('NOSKIPS_NO_AUDIO'):
-    # naming them is enough — PyInstaller ships a hook for numpy that pulls in
-    # exactly what's needed. collect_all('numpy') also works but drags numpy's
-    # own test suite (and pytest with it) into the exe for no reason.
+# NB: PyInstaller analyses bytecode, not runtime behaviour, so it finds those
+# imports perfectly well despite them being nested inside a function. That means
+# leaving them out of hiddenimports does NOT exclude them — an earlier version
+# of this flag looked like it worked and quietly shipped numpy anyway. To
+# actually drop them they have to be named in `excludes`.
+#
+# collect_all('numpy') also works but drags numpy's own test suite (and pytest
+# with it) into the exe for no reason; the stock hook pulls in what's needed.
+#
+# Measured on 2.0.0: 29.3MB with audio, 19.5MB without.
+audio_excludes = []
+if os.environ.get('NOSKIPS_NO_AUDIO'):
+    audio_excludes = ['numpy', 'pyaudiowpatch']
+else:
     hiddenimports += ['pyaudiowpatch', 'numpy']
 
 
@@ -39,7 +46,7 @@ a = Analysis(
         'pytest', '_pytest', 'pluggy', 'setuptools', 'pip',
         'numpy.testing', 'numpy.typing.mypy_plugin',
         'tkinter', 'pydoc_data', 'sqlalchemy', 'alembic',
-    ],
+    ] + audio_excludes,
     noarchive=False,
     optimize=0,
 )

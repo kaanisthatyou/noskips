@@ -13,6 +13,24 @@ Produces in `release/`:
 Bump the version in **two places** first: `__version__` in `app.py` and
 `MyAppVersion` in `installer.iss`.
 
+### A smaller exe
+
+The visualiser and the trace need numpy and pyaudiowpatch. `audio.py` imports
+both lazily and degrades to "not available" without them, so they can be left
+out entirely:
+
+```
+$env:NOSKIPS_NO_AUDIO = "1"
+powershell -ExecutionPolicy Bypass -File scripts\build.ps1
+```
+
+Measured on 2.0.0: **29.3MB with, 19.5MB without**.
+
+Note the flag has to add them to the spec's `excludes`, not merely leave them
+out of `hiddenimports`. PyInstaller analyses bytecode rather than runtime
+behaviour, so it finds `audio.py`'s function-level imports on its own — an
+earlier version of this flag looked like it worked and shipped numpy anyway.
+
 ## Upgrading from Rateify
 
 The installer uses a **new AppId**, so it installs alongside an existing
