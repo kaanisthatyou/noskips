@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
-{% block title %}{{ title }} — {{ artist }} — noskips{% endblock %}
-{% block og_title %}{{ title }} by {{ artist }}{% endblock %}
+{# a track stamped with no record — a single, or somebody leaving the field
+   blank on /stamp — still needs a name on its page #}
+{% set shown = title or "singles" %}
+{% block title %}{{ shown }} — {{ artist }} — noskips{% endblock %}
+{% block og_title %}{{ shown }} by {{ artist }}{% endblock %}
 {% block og_desc %}average {{ average|score }} across {{ works|length }} rated tracks on noskips{% endblock %}
 {% block og_extra %}
   {%- if og_image("/og/album/" ~ works[0].album_key ~ ".png") %}
@@ -19,7 +22,7 @@
     {% endif %}
 
     <div style="flex:1;min-width:200px">
-      <h1>{{ title }}</h1>
+      <h1>{{ shown }}</h1>
       <p class="verdict-artist" style="font-size:15px">{{ artist }}</p>
       <p class="big-avg">{{ average|score }}</p>
       <p class="muted">{{ works|length }} rated track{{ works|length != 1 and "s" or "" }}</p>
@@ -51,9 +54,28 @@
         <span class="t-name">{{ w.display_title }}</span>
         <span class="t-avg">{{ w.average|score }}</span>
         <span class="t-count">{{ w.rating_count }} verdict{{ w.rating_count != 1 and "s" or "" }}</span>
+        {% if viewer and viewer.handle %}
+          {% set mine = yours.get(w.id) %}
+          <button class="btn small stamp-toggle" type="button" data-for="stamp-{{ loop.index }}">
+            {% if mine %}yours · {{ mine.value|score }}{% else %}stamp{% endif %}
+          </button>
+        {% endif %}
       </div>
+      {% if viewer and viewer.handle %}
+        <div class="stamp-slot" id="stamp-{{ loop.index }}">
+          {{ m.stamp_control(w.display_artist, w.display_album, w.display_title,
+                             yours=yours.get(w.id)) }}
+        </div>
+      {% endif %}
     {% endfor %}
   </div>
+
+  {% if not viewer %}
+    <p class="muted" style="margin-top:12px">
+      <a href="/login?next=/album/{{ works[0].album_key }}">sign in</a> to add your own verdict —
+      or <a href="/download">get the widget</a> and catch it while it's playing.
+    </p>
+  {% endif %}
 </div>
 
 {% if verdicts %}

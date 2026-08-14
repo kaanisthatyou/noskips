@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}stamp something — noskips{% endblock %}
+
+{% block body %}
+<div class="card narrow">
+  <h2>stamp something</h2>
+  <p class="hand">from memory, on the web. the widget catches it at the second
+    you had it — this is for everything else.</p>
+
+  <div class="tear"></div>
+
+  <div class="stack" id="stamp-what">
+    <label class="field">
+      <span>artist</span>
+      <input id="s-artist" value="{{ artist }}" maxlength="200" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>record <em>(optional — leave it blank for a single)</em></span>
+      <input id="s-album" value="{{ album }}" maxlength="200" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>song</span>
+      <input id="s-title" value="{{ title }}" maxlength="200" autocomplete="off">
+    </label>
+  </div>
+
+  <div class="tear"></div>
+
+  {{ m.stamp_control("", "", "", standalone=True) }}
+
+  <p class="muted" style="margin-top:14px">
+    verdicts from here are marked <b>web</b> rather than <b>♪ live</b>, and the
+    card says so. only a paired widget can claim it was stamped while the track
+    was actually playing — that's the whole value of the mark.
+  </p>
+</div>
+{% endblock %}
+
+{% block script %}<script src="/static/web.js"></script>{% endblock %}

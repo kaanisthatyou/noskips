@@ -114,6 +114,9 @@ def _apply(op, device):
         "status": "stored",
         "title": title,
         "work_key": work.work_key,
+        # the web stamp form sends you to the record afterwards, and only the
+        # server knows which one a freshly-normalized title landed on
+        "album_key": work.album_key,
         "average": work.average,
         "count": work.rating_count,
         # the good moment: nobody had ever stamped this

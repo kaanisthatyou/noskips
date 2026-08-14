@@ -18,6 +18,16 @@ from . import bp, presenters
 PAGE = 30
 
 
+def _wanted_limit(default=PAGE, ceiling=PAGE * 2):
+    """?limit= from the query string, clamped. A junk value is a typo in a URL,
+    not a reason to hand somebody a 500."""
+    try:
+        wanted = int(request.args.get("limit", default) or default)
+    except ValueError:
+        wanted = default
+    return max(1, min(ceiling, wanted))
+
+
 def _find_user(handle):
     from ..auth.handles import normalize
 
@@ -170,9 +180,144 @@ def feed():
         .join(Work)
         .where(Rating.user_id.in_(followees), Rating.is_public.is_(True))
         .order_by(Rating.rated_at.desc())
-        .limit(int(request.args.get("limit", PAGE)))
+        .limit(_wanted_limit())
     ).all()
     return jsonify(
         ok=True,
         verdicts=[presenters.rating(r, viewer=g.user, include_work=True) for r in rows],
+    )
+
+
+# ----------------------------------------------------------------- search ----
+# The front door. Without this you can only reach an album page if somebody
+# hands you the link, which is a strange thing to ask of a social product.
+
+SEARCH_LIMIT = 40
+MIN_QUERY = 2
+
+
+def search_works(db, needle, limit=SEARCH_LIMIT):
+    """Works whose artist, album or title contains the folded query.
+
+    Substring rather than prefix: people search for the half of the title they
+    remember. ``autoescape`` matters — a query of ``%`` would otherwise match
+    the entire index.
+    """
+    if len(needle) < MIN_QUERY:
+        return []
+    like = (
+        Work.norm_title.contains(needle, autoescape=True)
+        | Work.norm_artist.contains(needle, autoescape=True)
+        | Work.norm_album.contains(needle, autoescape=True)
+    )
+    return db.scalars(
+        select(Work)
+        .where(like, Work.merged_into.is_(None), Work.rating_count > 0)
+        .order_by(Work.rating_count.desc(), Work.norm_title)
+        .limit(limit)
+    ).all()
+
+
+def search_people(db, needle, limit=12):
+    """Handles and display names. Private shelves are still findable — that a
+    person exists isn't the secret, what's on their shelf is."""
+    if len(needle) < MIN_QUERY:
+        return []
+    return db.scalars(
+        select(User)
+        .where(
+            User.handle_ci.is_not(None),
+            User.deleted_at.is_(None),
+            User.is_banned.is_(False),
+            User.handle_ci.contains(needle, autoescape=True)
+            | func.lower(User.display_name).contains(needle, autoescape=True),
+        )
+        .order_by(User.handle_ci)
+        .limit(limit)
+    ).all()
+
+
+def group_albums(works):
+    """Collapse matched works into the albums they sit on.
+
+    An album page is what a searcher usually wants — matching four tracks off
+    one record should offer the record, not four near-identical rows.
+    """
+    albums = {}
+    for w in works:
+        entry = albums.setdefault(
+            w.album_key,
+            {
+                "album_key": w.album_key,
+                "artist": w.display_artist,
+                "album": w.display_album,
+                "cover_url": None,
+                "hits": [],
+            },
+        )
+        entry["hits"].append(w)
+        entry["cover_url"] = entry["cover_url"] or w.cover_url
+    for entry in albums.values():
+        rated = entry["hits"]
+        entry["rated_tracks"] = len(rated)
+        entry["average"] = round(sum(w.average for w in rated) / len(rated), 2)
+    return sorted(albums.values(), key=lambda a: -a["rated_tracks"])
+
+
+@bp.get("/search")
+def search():
+    from ..resolve import normalize_query
+
+    raw = (request.args.get("q") or "").strip()
+    needle = normalize_query(raw)
+    if len(needle) < MIN_QUERY:
+        return jsonify(ok=True, query=raw, works=[], albums=[], people=[])
+
+    works = search_works(g.db, needle)
+    return jsonify(
+        ok=True,
+        query=raw,
+        works=[presenters.work(w) for w in works],
+        albums=[
+            {k: v for k, v in album.items() if k != "hits"} for album in group_albums(works)
+        ],
+        people=[presenters.user_brief(u) for u in search_people(g.db, needle)],
+    )
+
+
+# ----------------------------------------------------------------- recent ----
+
+
+def recent_verdicts(db, limit=PAGE):
+    """The last public verdicts from public shelves.
+
+    The user join isn't decoration: a rating can be public while its author's
+    whole shelf is private, and that combination must not leak into a list
+    anybody can read.
+    """
+    return db.scalars(
+        select(Rating)
+        .join(Work)
+        .join(User, Rating.user_id == User.id)
+        .where(
+            Rating.is_public.is_(True),
+            User.is_private.is_(False),
+            User.is_banned.is_(False),
+            User.deleted_at.is_(None),
+            User.handle_ci.is_not(None),
+        )
+        .order_by(Rating.rated_at.desc())
+        .limit(limit)
+    ).all()
+
+
+@bp.get("/recent")
+def recent():
+    limit = _wanted_limit()
+    rows = recent_verdicts(g.db, limit)
+    return jsonify(
+        ok=True,
+        verdicts=[
+            presenters.rating(r, viewer=current_user(g.db), include_work=True) for r in rows
+        ],
     )

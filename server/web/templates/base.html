@@ -17,7 +17,16 @@
 
   <header class="topbar">
     <a class="wordmark" href="/">noskips ♪</a>
+
+    {# the search box lives in the chrome on purpose: a shared index you can't
+       search is a filing cabinet with no handle #}
+    <form class="searchbox" action="/search" method="get" role="search">
+      <input name="q" type="search" placeholder="find a song, a record, a person"
+             value="{{ q or '' }}" aria-label="search noskips">
+    </form>
+
     <nav>
+      <a href="/recent">recent</a>
       {% if me %}
         <a href="/feed">feed</a>
         {% if me.handle %}<a href="/@{{ me.handle }}">your shelf</a>{% endif %}
@@ -29,6 +38,16 @@
   </header>
 
   {% block body %}{% endblock %}
+
+  <footer class="sitefoot">
+    <a href="/download">download</a>
+    <a href="/recent">recent</a>
+    <a href="/privacy">privacy</a>
+    <a href="/discord">discord</a>
+    <a href="https://github.com/{{ github_repo() }}">github</a>
+    <span class="muted">MIT licensed · no analytics, no third-party scripts,
+      nothing to consent to</span>
+  </footer>
 
 </div>
 

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{% if q %}{{ q }} — {% endif %}search — noskips{% endblock %}
+{% block og_desc %}search the index — only songs a human actually stopped and judged{% endblock %}
+
+{% block body %}
+<h2>search</h2>
+<p class="muted">the index only holds songs somebody stopped and judged, so a
+  miss usually means nobody's got to it yet — not that it doesn't exist.</p>
+
+{% if not searched %}
+  <div class="empty">
+    <p class="empty-big">what are you after?</p>
+    <p class="empty-small">an artist, a record, half a title you remember, or a handle
+      — two letters or more</p>
+  </div>
+
+{% elif not albums and not people %}
+  <div class="empty">
+    <p class="empty-big">nothing here yet</p>
+    <p class="empty-small">nobody has stamped anything matching “{{ q }}”</p>
+    {# the good ending for a miss: the searcher becomes the first press #}
+    <p class="first-press-call">
+      <a href="/stamp?title={{ q|urlencode }}">be its first press →</a>
+    </p>
+  </div>
+{% endif %}
+
+{% if people %}
+  <h3 class="section-label">people</h3>
+  <div class="people">
+    {% for u in people %}
+      <a class="person" href="/@{{ u.handle }}">
+        <div class="avatar" style="{{ avatar_style(u.avatar_seed, 38) }}"></div>
+        <span>
+          <b>@{{ u.handle }}</b>
+          {% if u.display_name and u.display_name != u.handle %}
+            <em>{{ u.display_name }}</em>
+          {% endif %}
+        </span>
+      </a>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if albums %}
+  <h3 class="section-label">records</h3>
+  <div class="results">
+    {% for a in albums %}
+      <a class="result" href="/album/{{ a.album_key }}">
+        {% if a.cover_url %}
+          <img class="verdict-cover" src="{{ a.cover_url }}" alt="" loading="lazy">
+        {% else %}
+          <div class="verdict-cover placeholder">♪</div>
+        {% endif %}
+        <div class="verdict-body">
+          <p class="verdict-title">{{ a.album or "singles" }}</p>
+          <p class="verdict-artist">{{ a.artist }}</p>
+          <p class="muted">
+            {{ a.rated_tracks }} matching track{{ a.rated_tracks != 1 and "s" or "" }} rated
+          </p>
+        </div>
+        <div class="score"><b>{{ a.average|score }}</b><span>AVERAGE</span></div>
+      </a>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if searched %}
+  <p class="muted" style="margin-top:22px">
+    rated something that isn't here? <a href="/stamp">stamp it from the web</a>.
+  </p>
+{% endif %}
+{% endblock %}

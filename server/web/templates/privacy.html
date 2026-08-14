@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}privacy — noskips{% endblock %}
+{% block og_title %}what noskips keeps{% endblock %}
+{% block og_desc %}what syncs, what never leaves your machine, and how to take it all back{% endblock %}
+
+{% block body %}
+<div class="card">
+  <h2>what we keep</h2>
+  <p class="hand">plainly, in the order that actually matters to you. no
+    legalese, because there's nothing here that needs hiding in it.</p>
+
+  <div class="tear"></div>
+
+  <h3 class="section-label">the widget, before you pair it</h3>
+  <p class="muted">nothing leaves your machine. no account, no telemetry, no
+    phone-home on launch. your ratings live in a plain
+    <span class="code">data/ratings.json</span> you can open, grep, back up or
+    delete, and cover art is cached as ordinary image files next to it.</p>
+
+  <h3 class="section-label">once you pair it</h3>
+  <p class="muted">the widget sends, for each song you rate: the artist, album
+    and title as your player reported them, your score and its label, your note
+    if you wrote one, when you stamped it, and the trace if listening was
+    switched on. that's the whole payload.</p>
+  <p class="muted" style="margin-top:8px">it does <b>not</b> send: what you're
+    listening to when you don't rate it, how long you listened, cover art (the
+    server finds its own from MusicBrainz), or anything about your machine
+    beyond a device name you can rename and revoke.</p>
+
+  <h3 class="section-label">videos never sync at all</h3>
+  <p class="muted">windows tells the widget whether what's playing is music or
+    a video. videos get rated exactly the same way but land in their own file
+    on their own shelf, and the sync engine is never handed them — not as a
+    setting, as a wiring decision.</p>
+
+  <h3 class="section-label">the account</h3>
+  <p class="muted">your email address, a hash of your password (never the
+    password), your handle, and — if you signed in with google or discord —
+    that provider's user id and the address it gave us. avatars are generated
+    from a random seed, so there are no uploads, which means no image
+    moderation and nothing of yours sitting in a bucket.</p>
+
+  <h3 class="section-label">what's public</h3>
+  <p class="muted">verdicts you mark public, on a shelf you haven't made
+    private. a note can be held back on its own while its score stays visible.
+    a private shelf shows strangers nothing but that it exists.</p>
+
+  <h3 class="section-label">addresses and logs</h3>
+  <p class="muted">rate limiting counts requests against your ip for a few
+    minutes at a time so that scripts can't hammer the place. those counters
+    are deleted within the hour and there is no other log of who read what — no
+    analytics, no pixels, no third-party scripts, and the fonts are served from
+    this server rather than a cdn. that's why there's no cookie banner: the
+    only cookie is the one that keeps you signed in.</p>
+
+  <div class="tear"></div>
+
+  <h3 class="section-label">taking it back</h3>
+  <p class="muted">
+    <b>export</b> — <span class="code">/v1/export</span> hands back every
+    verdict we hold on you, in the same shape as the widget's own file.<br>
+    <b>delete</b> — from <a href="/settings">settings</a>. every rating goes,
+    and any song nobody else was standing behind goes with it, which is the
+    same rule that created it in the first place.<br>
+    <b>unpair</b> — revoke a device from settings and its token stops working
+    immediately; the widget notices and keeps your local library.
+  </p>
+
+  <p class="muted" style="margin-top:16px">questions, or something here that
+    doesn't match what you observe: <a href="/discord">the discord</a>, or an
+    issue on <a href="https://github.com/{{ github_repo() }}">github</a>.</p>
+</div>
+{% endblock %}

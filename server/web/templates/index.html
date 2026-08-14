@@ -1,23 +1,94 @@
 {% extends "base.html" %}
+{% import "_downloads.html" as d %}
 {% block title %}noskips — judge every song, keep receipts{% endblock %}
+{% block og_title %}noskips — judge every song, keep receipts{% endblock %}
+{% block og_desc %}a windows widget that catches your verdict at the second you had it. no scraped catalog: a song has no page here until a human rates it.{% endblock %}
+{% block og_extra %}
+  {%- if og_image("/og/site.png") %}
+    <meta property="og:image" content="{{ og_image('/og/site.png') }}">
+  {%- endif %}
+{% endblock %}
 
 {% block body %}
-{# Placeholder. The real landing page is the marketing site, which is planned
-   but deliberately not built yet — see docs/WEBSITE.md. #}
-<div class="card narrow">
-  <h2>judge every song. keep receipts.</h2>
-  <p class="hand">a tiny windows widget that shows what's playing and lets you
-    stamp a verdict on it — then a shelf, on the web, with your name on it.</p>
 
-  <div class="tear"></div>
+{# ---- hero: the widget on a real desktop, not a mockup in a browser frame ---- #}
+<section class="hero">
+  <div class="hero-words">
+    <h1 class="hero-mark">noskips ♪</h1>
+    <p class="hero-line">judge every song. keep receipts.</p>
+    <p class="hand">a tiny windows widget that sits on top of your work, shows
+      what's playing, and lets you stamp a verdict on it — then a shelf, on the
+      web, with your name on it.</p>
 
-  <p class="muted">a song has no page here until somebody rates it. no scraped
-    catalog, no empty pages with a zero in them. if nobody's stamped it yet,
-    you can be its first press.</p>
-
-  <div class="row" style="margin-top:16px">
-    <a class="btn go" href="/signup">start a shelf</a>
-    <a class="btn" href="/login">sign in</a>
+    <div class="row" style="margin-top:18px">
+      <a class="btn go big" href="{{ downloads.artifacts[0].url }}">
+        download for windows
+      </a>
+      <a class="btn" href="/signup">start a shelf</a>
+    </div>
+    <p class="muted" style="margin-top:8px">
+      v{{ downloads.version }} · {{ downloads.artifacts[0].size }} ·
+      <a href="/download">portable zip</a>
+    </p>
   </div>
-</div>
+
+  <img class="hero-shot" src="/static/shots/widget-desk.png" alt="the noskips widget floating over a desktop"
+       onerror="this.remove()">
+</section>
+
+{# ---- the one rule. this is the interesting part, so it goes first ---- #}
+<section class="card">
+  <h2>“nobody has rated this yet.”</h2>
+  <p class="hand">there is no catalog here. no scraped database of every song
+    ever pressed, no empty pages with a zero on them. a song gets an entry the
+    moment a human stops and judges it — and if the last person who stood
+    behind it takes their verdict back, it goes away again.</p>
+  <p class="muted" style="margin-top:12px">which means every page on this site
+    is one somebody actually cared about. and when you're the first, the widget
+    says so, and the credit stays yours as long as you stand behind it.</p>
+
+  <img class="rule-shot" src="/static/shots/first-press.png" alt="the widget offering a first press"
+       onerror="this.remove()">
+</section>
+
+{# ---- the trace: the screenshot that travels ---- #}
+<section class="card">
+  <h2>the trace</h2>
+  <p class="hand">while a track plays, a needle draws the shape of it. stamp a
+    verdict and the line freezes onto the card — the actual waveform of the
+    twelve seconds you made your mind up in.</p>
+
+  <img class="trace-shot" src="/static/shots/trace.gif" alt="the trace being drawn and freezing onto a verdict"
+       onerror="this.remove()">
+
+  <p class="muted" style="margin-top:12px">honestly: this only happens when
+    listening is switched on, which is off by default. no capture, no trace —
+    an invented one would make the honest ones worthless.</p>
+</section>
+
+{# ---- proof of life, or nothing at all ---- #}
+{% if ticker %}
+<section>
+  <h2>what people are saying right now</h2>
+  {{ ticker|safe }}
+  <p class="muted">{{ "{:,}".format(total) }} verdicts and counting ·
+    <a href="/recent">all of it →</a></p>
+</section>
+{% endif %}
+
+{# ---- download ---- #}
+<section class="card" id="download">
+  {{ d.downloads_block(downloads) }}
+</section>
+
+{# ---- discord, with a reason attached ---- #}
+<section class="card">
+  <h2>the discord</h2>
+  <p class="hand">first-press bragging, feature requests, and a weekly
+    listening thread where somebody makes everyone else sit through a record.</p>
+  <p class="row" style="margin-top:14px">
+    <a class="btn" href="/discord">join the server</a>
+  </p>
+</section>
+
 {% endblock %}

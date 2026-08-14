@@ -66,6 +66,15 @@ def trace_points(encoded):
     return trace_to_points(encoded)
 
 
+@bp.app_template_global()
+def github_repo():
+    """The repo the footer and download links point at. One definition, because
+    it changes when the project is renamed."""
+    from .releases import REPO
+
+    return REPO
+
+
 @bp.app_context_processor
 def inject_me():
     """`me` is available in every template — the topbar needs it on all of them
@@ -74,7 +83,7 @@ def inject_me():
     return {"me": current_user(g.db) if "db" in g else None}
 
 
-from . import admin, og, pages, pair_routes  # noqa: E402,F401
+from . import admin, og, pages, pair_routes, releases  # noqa: E402,F401
 
 
 @bp.app_template_global()

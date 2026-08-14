@@ -10,8 +10,11 @@ Produces in `release/`:
 - `noskips-Setup-<version>.exe` — per-user installer (no admin needed)
 - `noskips-<version>-portable.zip` — unzip-and-run
 
-Bump the version in **two places** first: `__version__` in `app.py` and
-`MyAppVersion` in `installer.iss`.
+Bump the version in **three places** first: `__version__` in `app.py`,
+`MyAppVersion` in `installer.iss`, and `VERSION` (plus the two byte counts) in
+`server/web/releases.py` — that last one is what the website's download buttons
+point at, and it is a committed table rather than a call to the GitHub API so
+the front page never depends on GitHub being up.
 
 ### A smaller exe
 

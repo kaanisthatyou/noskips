@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}recent verdicts — noskips{% endblock %}
+{% block og_title %}recent verdicts on noskips{% endblock %}
+{% block og_desc %}the last things people stopped and judged{% endblock %}
+
+{% block body %}
+<h2>recent</h2>
+<p class="muted">the last things anyone stopped and judged. no ranking, no
+  suggestions — the same list for everybody.</p>
+
+{% if verdicts %}
+  <div class="verdicts">
+    {% for r in verdicts %}{{ m.verdict(r, viewer=me) }}{% endfor %}
+  </div>
+{% else %}
+  <div class="empty">
+    <p class="empty-big">nothing stamped yet</p>
+    <p class="empty-small">the index starts empty on purpose — somebody has to go first</p>
+    <p class="first-press-call"><a href="/stamp">be the first press →</a></p>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block script %}<script src="/static/web.js"></script>{% endblock %}

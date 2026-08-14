@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "_downloads.html" as d %}
+{% block title %}download noskips{% endblock %}
+{% block og_title %}download noskips{% endblock %}
+{% block og_desc %}the widget, for windows 10/11{% endblock %}
+
+{% block body %}
+<div class="card narrow">
+  {{ d.downloads_block(downloads) }}
+
+  <div class="tear"></div>
+
+  <p class="muted">already had <b>rateify</b>? the installer uses a new id, so
+    it installs alongside rather than over it, and your library comes across on
+    first run. uninstall the old one once you've confirmed your shelf arrived.</p>
+
+  <p class="muted" style="margin-top:10px">nothing here phones home until you
+    pair it — see <a href="/privacy">what syncs and what never leaves your
+    machine</a>.</p>
+</div>
+{% endblock %}

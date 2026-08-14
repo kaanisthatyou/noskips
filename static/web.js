@@ -25,8 +25,11 @@ async function api(path, options = {}) {
 
 function say(el, text, kind) {
   if (!el) return;
+  // remember what the element was wearing, so tagging it good/bad doesn't
+  // strip the class that positions it
+  if (el.dataset.base === undefined) el.dataset.base = el.className;
   el.textContent = text;
-  el.className = `msg${kind ? ` ${kind}` : ""}`;
+  el.className = `${el.dataset.base}${kind ? ` ${kind}` : ""}`;
 }
 
 // ------------------------------------------------------------ sign in / up ----
@@ -218,5 +221,138 @@ document.querySelectorAll(".cosign-btn").forEach((button) =>
     if (!ok) return;
     button.classList.toggle("on", !done);
     button.textContent = done ? "cosign" : `cosigned · ${data.count}`;
+  })
+);
+
+// ------------------------------------------------------------ stamping ----
+// The widget's scale, on the web: ten pills and a light/just/strong modifier.
+// A verdict entered here is the same object as one stamped in the widget, so
+// the arithmetic has to match app.js exactly — light is −1/3, strong is +1/3.
+
+const modOffset = { light: -1 / 3, just: 0, strong: 1 / 3 };
+const valueOf = (n, mod) => Math.round((n + modOffset[mod]) * 100) / 100;
+const labelOf = (n, mod) => (mod === "just" ? `${n}` : `${mod} ${n}`);
+
+function readBack(value) {
+  // reverse a stored value into pill + modifier, so restamping starts where
+  // the reader actually left off rather than at a blank control
+  const n = Math.min(10, Math.max(1, Math.round(value)));
+  return { n, mod: value < n - 0.1 ? "light" : value > n + 0.1 ? "strong" : "just" };
+}
+
+function setUpStamp(form) {
+  const state = form.dataset.value
+    ? readBack(parseFloat(form.dataset.value))
+    : { n: null, mod: "just" };
+  const standalone = form.dataset.standalone === "true";
+  const reading = form.querySelector(".stamp-reading");
+  const msg = form.querySelector(".stamp-msg");
+
+  function render() {
+    form.querySelectorAll(".pill").forEach((p) =>
+      p.classList.toggle("on", Number(p.dataset.n) === state.n)
+    );
+    form.querySelectorAll(".mod").forEach((m) => {
+      m.classList.toggle("active", m.dataset.mod === state.mod);
+      // the scale tops out at 10; there is no stronger than the top
+      m.disabled = m.dataset.mod === "strong" && state.n === 10;
+    });
+    reading.textContent =
+      state.n == null ? "pick a number" : `${labelOf(state.n, state.mod)} (${valueOf(state.n, state.mod)})`;
+  }
+
+  form.querySelectorAll(".pill").forEach((p) =>
+    p.addEventListener("click", () => {
+      state.n = Number(p.dataset.n);
+      if (state.n === 10 && state.mod === "strong") state.mod = "just";
+      render();
+    })
+  );
+
+  form.querySelectorAll(".mod").forEach((m) =>
+    m.addEventListener("click", () => {
+      if (m.disabled) return;
+      state.mod = m.dataset.mod;
+      render();
+    })
+  );
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (state.n == null) return say(msg, "pick a number first", "bad");
+
+    // the standalone page carries the track in its own fields; a row on an
+    // album page already knows exactly which song it is
+    const what = standalone
+      ? {
+          artist: $("s-artist").value.trim(),
+          album: $("s-album").value.trim(),
+          title: $("s-title").value.trim(),
+        }
+      : { artist: form.dataset.artist, album: form.dataset.album, title: form.dataset.title };
+
+    if (!what.title) return say(msg, "a song needs a title", "bad");
+
+    const save = form.querySelector(".stamp-save");
+    save.disabled = true;
+    say(msg, "…");
+
+    const { ok, data } = await api("/v1/sync", {
+      method: "POST",
+      body: {
+        ops: [
+          {
+            op: "rate",
+            ...what,
+            value: valueOf(state.n, state.mod),
+            label: labelOf(state.n, state.mod),
+            note: form.querySelector(".stamp-note").value.trim(),
+            is_public: form.querySelector(".stamp-public").checked,
+            note_public: form.querySelector(".stamp-note-public").checked,
+            // keep the widget's revision, not one past it: whichever verdict
+            // was written last should win, and the server settles ties by time
+            rev: Number(form.dataset.rev || 1),
+          },
+        ],
+      },
+    });
+    save.disabled = false;
+
+    if (!ok) return say(msg, data.error || "that didn't work", "bad");
+    const result = (data.results || [])[0] || {};
+    if (result.status !== "stored") {
+      return say(msg, result.error || "the server already has a newer verdict", "bad");
+    }
+
+    if (standalone) {
+      say(msg, result.first_press ? "first press ✦ taking you there…" : "stamped ✦", "good");
+      return setTimeout(() => (location.href = `/album/${result.album_key}`), 700);
+    }
+
+    say(msg, result.first_press ? "first press ✦" : "stamped ✦", "good");
+    save.textContent = "restamp it";
+
+    // the row above now says something different about the world
+    const slot = form.closest(".stamp-slot");
+    const row = slot.previousElementSibling;
+    if (row) {
+      row.querySelector(".t-avg").textContent = Number(result.average).toFixed(1);
+      row.querySelector(".t-count").textContent =
+        `${result.count} verdict${result.count === 1 ? "" : "s"}`;
+      const toggle = row.querySelector(".stamp-toggle");
+      if (toggle) toggle.textContent = `yours · ${valueOf(state.n, state.mod).toFixed(1)}`;
+    }
+  });
+
+  render();
+}
+
+document.querySelectorAll(".stamp-control").forEach(setUpStamp);
+
+document.querySelectorAll(".stamp-toggle").forEach((button) =>
+  button.addEventListener("click", () => {
+    const slot = $(button.dataset.for);
+    const form = slot.querySelector(".stamp-control");
+    form.hidden = !form.hidden;
   })
 );

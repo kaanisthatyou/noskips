@@ -66,11 +66,17 @@ page with your name on it.
   human stamps it: no scraped catalog, no empty pages with a zero in them.
 - **The web** — profiles, album pages with the whole 1–10 scale as a histogram,
   a chronological feed of people you follow, and cosigns instead of likes.
+- **Search and a public list of recent verdicts**, so the shared index has a
+  front door rather than only being reachable by link.
+- **You can rate from the web too** — the same 1–10 + light/just/strong control
+  on every album page, and a form for first-pressing something from memory.
+  Those are marked `web`; only a paired widget can claim the `♪ live` mark that
+  means it was stamped while the track was genuinely playing.
 - Sign in with Google, Discord or email. The exe never holds a secret: it hands
   the login to your real browser and waits for a token it can use.
 
-See [docs/SERVER.md](docs/SERVER.md) to run the server, and
-[docs/WEBSITE.md](docs/WEBSITE.md) for the marketing site (planned, not built).
+See [docs/SERVER.md](docs/SERVER.md) to run the server and
+[docs/WEBSITE.md](docs/WEBSITE.md) for why the site is shaped the way it is.
 
 ## Install
 

@@ -15,7 +15,7 @@ import uuid
 from datetime import timedelta
 
 from flask import current_app, g, jsonify, request, session as flask_session
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from .auth import pairing
 from .models import RateLimit, User, utcnow
@@ -157,6 +157,20 @@ def rate_limit(db, name, limit, per=timedelta(minutes=1), key=None):
 
     if row.count > limit:
         raise ApiError("slow down a moment", 429, "rate_limited")
+
+
+# A bucket keyed by IP is personal data, so it doesn't get to live forever: an
+# hour is far longer than the longest window (five minutes) and short enough
+# that the table stays small and holds nothing worth keeping.
+RATE_LIMIT_RETENTION = timedelta(hours=1)
+
+
+def prune_rate_limits(db, retention=RATE_LIMIT_RETENTION):
+    """Drop spent windows. Called from the resolver cron rather than from every
+    request — this is housekeeping, and nobody's rating should pay for it."""
+    cutoff = utcnow() - retention
+    result = db.execute(delete(RateLimit).where(RateLimit.window_start < cutoff))
+    return result.rowcount or 0
 
 
 def json_error(err):

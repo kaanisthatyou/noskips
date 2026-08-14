@@ -52,3 +52,53 @@
   </div>
 </article>
 {% endmacro %}
+
+
+{# The rating control, identical everywhere it appears: the album page's track
+   rows and the standalone stamp form. It is the widget's scale exactly — ten
+   pills and a light/just/strong modifier — because a verdict stamped on the
+   web and one stamped in the widget have to be the same kind of thing.
+
+   Everything it needs travels in data attributes; static/web.js does the rest.
+   `yours` prefills it when the reader has already judged this one. #}
+{% macro stamp_control(artist, album, title, yours=None, open=False, standalone=False) %}
+<form class="stamp-control{% if standalone %} standalone{% endif %}"
+      {% if not (open or standalone) %}hidden{% endif %}
+      data-artist="{{ artist }}" data-album="{{ album }}" data-title="{{ title }}"
+      data-standalone="{{ standalone|lower }}"
+      {%- if yours %} data-rev="{{ yours.rev }}" data-value="{{ yours.value }}"{% endif %}>
+
+  <div class="pills" role="group" aria-label="score">
+    {% for n in range(1, 11) %}
+      <button type="button" class="pill" data-n="{{ n }}">{{ n }}</button>
+    {% endfor %}
+  </div>
+
+  <div class="mods" role="group" aria-label="how firmly">
+    <button type="button" class="mod" data-mod="light">light</button>
+    <button type="button" class="mod active" data-mod="just">just</button>
+    <button type="button" class="mod" data-mod="strong">strong</button>
+    <span class="stamp-reading"></span>
+  </div>
+
+  <textarea class="stamp-note" rows="2" maxlength="2000"
+            placeholder="why? (optional)">{{ yours.note if yours and yours.note else "" }}</textarea>
+
+  <div class="row">
+    <label class="tick">
+      <input type="checkbox" class="stamp-public"
+             {% if yours is none or yours.is_public %}checked{% endif %}>
+      show on my shelf
+    </label>
+    <label class="tick">
+      <input type="checkbox" class="stamp-note-public"
+             {% if yours is none or yours.note_public %}checked{% endif %}>
+      show the note
+    </label>
+    <button type="submit" class="btn go stamp-save">
+      {% if yours %}restamp it{% else %}stamp it{% endif %}
+    </button>
+    <span class="msg stamp-msg"></span>
+  </div>
+</form>
+{% endmacro %}

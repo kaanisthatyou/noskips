@@ -1,0 +1,26 @@
+{# The download block, in one place — it appears on the landing page and again
+   at /download, and the two must never drift apart on version or wording. #}
+{% macro downloads_block(downloads, heading=True) %}
+{% if heading %}<h2>get the widget</h2>{% endif %}
+
+<div class="downloads">
+  {% for a in downloads.artifacts %}
+    <a class="btn {% if loop.first %}go{% endif %}" href="{{ a.url }}">
+      {{ a.name }}
+    </a>
+    <p class="muted">{{ a.blurb }} · {{ a.size }}</p>
+  {% endfor %}
+</div>
+
+{# said plainly and up front, because finding out after the download wastes
+   somebody's afternoon and earns a bad first impression for nothing #}
+<p class="warn" style="margin-top:14px">
+  <b>Windows 10/11 only</b>, because it reads the Windows media session.
+  The web half works everywhere.
+</p>
+
+<p class="muted" style="margin-top:10px">
+  version {{ downloads.version }} · source on
+  <a href="{{ downloads.repo_url }}">github</a>, MIT licensed
+</p>
+{% endmacro %}

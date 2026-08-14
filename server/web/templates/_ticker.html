@@ -1,0 +1,13 @@
+{# The landing page's ticker, rendered on its own so it can be cached as HTML
+   rather than as rows. Caching ORM objects across requests looks like it works
+   — the relationships happen to be loaded by the first render — right up until
+   a template touches one that wasn't, and then it's a DetachedInstanceError in
+   production and nowhere else.
+
+   The landing page is only ever shown to a stranger (anyone signed in is sent
+   to their shelf), so there is no viewer, which is also what makes one cached
+   fragment correct for everybody. #}
+{% import "_macros.html" as m %}
+<div class="verdicts ticker">
+  {% for r in verdicts %}{{ m.verdict(r, viewer=None) }}{% endfor %}
+</div>

@@ -1,14 +1,17 @@
-# The website — plan only, not built
+# The website
 
-This is the one piece you asked to be planned and not executed. Nothing in here
-exists yet. `/` currently renders a deliberate placeholder
-(`server/web/templates/index.html`) that says what the product is and points at
-sign-in; replacing it is the whole job below.
+> **Built.** This started as a plan-only document and is now the spec the
+> landing page was built from: `server/web/templates/index.html`, with the
+> download block factored into `_downloads.html` (shared with `/download`) and
+> the privacy page at `privacy.html`. Where the built page departs from the
+> plan it is noted inline. Keep editing this file when the page changes — it is
+> the reasoning, and the reasoning is the part that's hard to reconstruct.
 
 It lives in the same Flask app, at `/`, for the same reason everything else
-does: one deploy, one stylesheet, one set of fonts. A separate Astro or Next
-site would be a second thing to keep in visual step with the widget, and the
-whole point is that all of this reads as one object.
+does: one deploy, one stylesheet, one set of fonts.
+
+A separate Astro or Next site would be a second thing to keep in visual step
+with the widget, and the whole point is that all of this reads as one object.
 
 ## What it's for, in order
 
@@ -45,9 +48,13 @@ look empty for the first week, which is a good reason to seed it by using the
 thing yourself before launch. Hide the section entirely below some threshold
 (say 25 verdicts) rather than showing three lonely rows.
 
-**Download.** Both artifacts, with versions and sizes pulled from the GitHub
-releases API at build time (not at request time — the marketing page must never
-depend on GitHub being up):
+**Download.** Both artifacts. Built as a committed table in
+`server/web/releases.py` rather than a call to the GitHub releases API — same
+reasoning as "not at request time", taken one step further, because a build-time
+fetch still fails the day GitHub is down and you happen to redeploy. Bump it
+with the version; docs/RELEASING.md names all three places. The section is also
+its own page at `/download`, because a signed-in reader is redirected off `/`
+to their shelf and would otherwise have no route to the exe.
 
 - `noskips-Setup-x.y.z.exe` — per-user installer, no admin
 - `noskips-x.y.z-portable.zip` — unzip and run
@@ -71,14 +78,24 @@ point here — say it plainly and it does more work than a trust badge.
 
 ## Build notes
 
-- **Static-render it.** The marketing page must not touch Postgres on a cold
-  start. Cache the ticker's payload for a few minutes and serve the rest as
-  bytes; Cloudflare in front and the database never sees the front page.
+- **Keep Postgres off the front page.** As built: the ticker is the only thing
+  on `/` that queries at all, it's cached for two minutes, and the response
+  carries `Cache-Control: public, max-age=120` so a CDN absorbs the rest. The
+  cache is per-process, which on serverless means it helps a warm instance and
+  does nothing for a cold one — the header is what actually carries the load,
+  and Redis would be the only paid thing in the stack.
+  The fragment is cached as **rendered HTML, not as rows**. Caching ORM objects
+  across requests appears to work, because the first render happens to load
+  their relationships; the day a template touches one it didn't, it's a
+  `DetachedInstanceError` in production and nowhere else.
 - **Reuse `static/zine.css`.** No new design language. If something needs a
   style the app doesn't have, that's a hint the section is off-brand.
 - **One `og:image` for the site**, drawn by the same Pillow code as the profile
-  and album cards (`server/web/og.py`) so the link preview matches everything
-  else.
+  and album cards — `/og/site.png` in `server/web/og.py`.
+- **Screenshots degrade to nothing.** Each `<img>` on the landing page removes
+  itself if the file is missing, so a shot that hasn't been taken yet costs a
+  picture rather than a broken page. `static/shots/README.md` says what each
+  one should show.
 - **No cookie banner**, because there's nothing to consent to: no analytics, no
   third-party scripts, no fonts from a CDN. That's worth a sentence in the
   footer — it's unusual enough to be a feature.
@@ -93,8 +110,7 @@ had it") is already the hero.
 
 ## Before it goes public
 
-The site is the last thing to build, not the first, and there are two things
-that should land before anyone is invited:
+Two things that should land before anyone is invited — neither is code:
 
 1. **Seed the index.** An empty social product looks dead. Rate a few hundred
    tracks yourself first — you already have 11 albums locally, and pairing

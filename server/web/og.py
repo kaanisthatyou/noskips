@@ -80,6 +80,21 @@ def _png(image):
     )
 
 
+@bp.get("/og/site.png")
+def site_card():
+    """The card for the front page itself, drawn by the same code as everything
+    else so a link to the site sits alongside links to a shelf without looking
+    like it came from a different product."""
+    if not AVAILABLE:
+        abort(404)
+    image, draw = _canvas()
+    draw.text((64, 230), "judge every", font=_font("SpecialElite.ttf", 96), fill=INK)
+    draw.text((64, 340), "song.", font=_font("SpecialElite.ttf", 96), fill=STAMP)
+    draw.text((64, 470), "no catalog. a song has no page here", font=_font("Caveat.ttf", 44), fill=SOFT)
+    draw.text((64, 520), "until somebody rates it.", font=_font("Caveat.ttf", 44), fill=SOFT)
+    return _png(image)
+
+
 @bp.get("/og/u/<handle>.png")
 def profile_card(handle):
     if not AVAILABLE:

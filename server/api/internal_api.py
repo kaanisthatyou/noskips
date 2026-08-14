@@ -12,7 +12,7 @@ import os
 from flask import g, jsonify, request
 
 from .. import musicbrainz
-from ..security import ApiError
+from ..security import ApiError, prune_rate_limits
 from . import bp
 
 
@@ -40,4 +40,7 @@ def resolve():
         raise ApiError("not found", 404, "not_found")
 
     limit = min(int(request.args.get("limit", 20)), 50)
-    return jsonify(ok=True, **musicbrainz.resolve_pending(g.db, limit=limit))
+    # the one timer this project has, so it also carries the housekeeping:
+    # spent rate-limit windows are keyed by IP and have no business persisting
+    pruned = prune_rate_limits(g.db)
+    return jsonify(ok=True, pruned_rate_limits=pruned, **musicbrainz.resolve_pending(g.db, limit=limit))

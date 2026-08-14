@@ -217,3 +217,16 @@ def work_key(artist, title):
 def album_key(artist, album):
     """Shortcut when only the album grouping key is wanted."""
     return identify(artist, album, "").album_key
+
+
+def normalize_query(text):
+    """A search box's text, folded the same way the stored columns were.
+
+    Search matches against ``norm_artist`` / ``norm_album`` / ``norm_title``,
+    so the query has to go through exactly the same folding — otherwise
+    "Beyonce" typed plainly would miss the row stored from a tag with the
+    accent on it. Editions go too, because people paste titles straight out of
+    Spotify: "Let It Happen - 2015 Remaster" has to find the same row that was
+    stored as "let it happen".
+    """
+    return _strip_editions(_clean(text))
