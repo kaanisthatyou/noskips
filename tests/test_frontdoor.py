@@ -414,3 +414,42 @@ def test_a_private_note_stays_off_the_public_list(client, app):
 
     assert b"kept back" not in stranger.get("/recent").data
     assert b"kept back" in client.get("/recent").data  # but it's still yours
+
+
+# ------------------------------------------------------------- the database ----
+
+
+@pytest.mark.parametrize(
+    "given,expected",
+    [
+        # what Neon actually puts on your clipboard
+        (
+            "postgresql://u:p@ep-x-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require",
+            "postgresql+psycopg://u:p@ep-x-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require",
+        ),
+        # the legacy scheme SQLAlchemy dropped, still handed out by Heroku
+        ("postgres://u:p@h/db", "postgresql+psycopg://u:p@h/db"),
+        # a driver chosen on purpose is left alone
+        ("postgresql+psycopg2://u:p@h/db", "postgresql+psycopg2://u:p@h/db"),
+        ("postgresql+psycopg://u:p@h/db", "postgresql+psycopg://u:p@h/db"),
+        ("sqlite:///noskips-dev.db", "sqlite:///noskips-dev.db"),
+    ],
+)
+def test_a_pasted_connection_string_is_made_connectable(given, expected):
+    """`postgresql://` with no driver resolves to psycopg2, and what's installed
+    is psycopg 3 — so pasting Neon's URL unchanged is a ModuleNotFoundError
+    from alembic and from the first request in production."""
+    from server.db import normalize_database_url
+
+    assert normalize_database_url(given) == expected
+
+
+def test_the_migrations_connect_the_same_way_the_app_does():
+    """A migration that resolves a different driver from the server is its own
+    bug, so env.py shares the one helper rather than repeating the rewrite."""
+    from pathlib import Path
+
+    env = Path("server/migrations/env.py").read_text(encoding="utf-8")
+
+    assert "normalize_database_url" in env
+    assert "postgres://" not in env  # no second, drifting copy of the rule

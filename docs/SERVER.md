@@ -85,8 +85,64 @@ Everything here is $0:
 | Email | Gmail SMTP + an app password, 500/day, no domain needed |
 | Domain | `*.vercel.app` until you want a real one (`.app` ~$15/yr; avoid `.fm`, ~$100/yr) |
 
-Set `SECRET_KEY`, `DATABASE_URL` and `BASE_URL` in the Vercel project, then run
-`alembic upgrade head` against the Neon URL once from your machine.
+### Neon, step by step
+
+1. **neon.tech** → sign in with GitHub → **Create project**. Name it `noskips`,
+   pick the region nearest your Vercel region, leave the Postgres version at the
+   default. The free tier needs no card.
+2. On the project dashboard, **Connection string**. Two things to get right:
+   - the **Connection pooling** toggle must be **on** — the host then has
+     `-pooler` in it. This is not a nicety: `server/db.py` uses `NullPool`
+     because a serverless process can't reuse connections, so PgBouncer on
+     Neon's side is doing all the pooling. The direct string will exhaust
+     connections under any real traffic.
+   - copy the **psql / URI** form, not the `psql "..."` command line.
+
+   You want something shaped like:
+
+   ```
+   postgresql://neondb_owner:XXXX@ep-something-a1b2c3-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require
+   ```
+
+3. **You don't have to fix the scheme by hand.** Neon hands out `postgresql://`,
+   which SQLAlchemy resolves to psycopg **2** — and what's installed here is
+   psycopg **3**. `normalize_database_url` in `server/db.py` rewrites it to
+   `postgresql+psycopg://`, and `server/migrations/env.py` uses the same helper
+   so migrations and the app can never resolve different drivers. Paste the URL
+   exactly as Neon gives it to you.
+
+4. **Migrate once, from your machine.** PowerShell:
+
+   ```powershell
+   $env:DATABASE_URL = "postgresql://...-pooler.../neondb?sslmode=require"
+   pip install -r server/requirements.txt
+   python -m alembic upgrade head
+   ```
+
+   Expect `Running upgrade -> 4cd2a8fc4580, initial schema` and then the rate-limit
+   revision. Re-running is safe; it's a no-op once they're applied.
+
+5. **Check it took**, rather than trusting it:
+
+   ```powershell
+   python -c "from server.db import engine; from sqlalchemy import text; print(engine().connect().execute(text('select count(*) from users')).scalar())"
+   ```
+
+   `0` is the right answer. `relation "users" does not exist` means step 4
+   ran against SQLite because `DATABASE_URL` wasn't set in that shell.
+
+6. **Put the same string in Vercel** — Project → Settings → Environment
+   Variables → `DATABASE_URL`, ticked for Production (and Preview, if you want
+   previews to work). Environment variables are read at cold start, so
+   **redeploy after adding it**; setting it on a live project changes nothing
+   until the next deployment.
+
+Then set `SECRET_KEY` and `BASE_URL` the same way.
+
+> If you'd rather not manage the string at all: Vercel's Marketplace has a Neon
+> integration that provisions the database and sets `DATABASE_URL` on the
+> project for you. It's the same Neon free tier. Check the variable it sets is
+> the pooled host before relying on it.
 
 Two things to know:
 

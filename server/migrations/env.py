@@ -11,6 +11,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from server.db import normalize_database_url
 from server.models import Base
 
 config = context.config
@@ -18,10 +19,11 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-database_url = os.environ.get("DATABASE_URL", "sqlite:///noskips-dev.db")
-# Neon and Heroku-style URLs still use the legacy scheme SQLAlchemy dropped
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
+# one definition of what a pasted Neon URL turns into, shared with the app —
+# a migration that connects differently from the server is its own bug
+database_url = normalize_database_url(
+    os.environ.get("DATABASE_URL", "sqlite:///noskips-dev.db")
+)
 config.set_main_option("sqlalchemy.url", database_url)
 
 target_metadata = Base.metadata

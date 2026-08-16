@@ -18,12 +18,28 @@ _engine = None
 _Session = None
 
 
-def database_url():
-    url = os.environ.get("DATABASE_URL", "sqlite:///noskips-dev.db")
-    # Neon and Heroku-style URLs still use the scheme SQLAlchemy dropped
+def normalize_database_url(url):
+    """Make a connection string copied off a dashboard actually connectable.
+
+    Two rewrites, both of them things you'd otherwise discover as a stack trace:
+
+    * ``postgres://`` is the scheme Neon and Heroku still hand out and the one
+      SQLAlchemy dropped.
+    * ``postgresql://`` with no driver resolves to **psycopg2**, and what's
+      installed here is psycopg **3** (``psycopg[binary]`` in the server's
+      requirements). Pasting Neon's URL unchanged gets you
+      ``ModuleNotFoundError: No module named 'psycopg2'`` from alembic and from
+      the first request on Vercel. An explicitly chosen driver is left alone.
+    """
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
     return url
+
+
+def database_url():
+    return normalize_database_url(os.environ.get("DATABASE_URL", "sqlite:///noskips-dev.db"))
 
 
 def engine():
