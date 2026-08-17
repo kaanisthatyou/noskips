@@ -556,3 +556,48 @@ section h2 { margin-bottom: 8px; }
   .searchbox { order: 3; max-width: none; margin: 8px 0 0; }
   .hero-mark { font-size: 40px; }
 }
+
+/* ------------------------------------------------ keyboard + motion */
+
+/* Seven tab stops sit between the top of every page and its content: the
+   wordmark, the search field, and five nav items. Parked off-screen rather
+   than display:none, because a hidden element isn't focusable and a skip link
+   nobody can reach is decoration. */
+.skip {
+  position: fixed;
+  left: 12px;
+  top: -64px;
+  z-index: 50;
+  transition: top .12s ease-out;
+}
+.skip:focus { top: 12px; }
+
+/* Four rules above clear the browser's outline and replace it with a shadow.
+   A shadow reads as focus if you were already looking at the field; for
+   somebody arriving by keyboard it's easy to lose against a 2px ink border.
+   :focus-visible fires only for keyboard focus, so this costs a reader who
+   clicks nothing at all. Teal because it's already the palette's "yes", and
+   it's defined in every theme including noir. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+}
+
+/* The drop-in is one card arriving with a bit of personality. Forty of them —
+   which is what /recent and a busy album page actually render — is a wall of
+   paper rotating into place. Somebody whose system asks for less motion has
+   asked for precisely this, so honour it rather than deciding the animation is
+   tasteful enough to be exempt. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

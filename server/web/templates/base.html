@@ -13,6 +13,7 @@
 {% block og_extra %}{% endblock %}
 </head>
 <body>
+<a class="skip" href="#main">skip to the page</a>
 <div class="wrap">
 
   <header class="topbar">
@@ -44,7 +45,9 @@
     </nav>
   </header>
 
-  {% block body %}{% endblock %}
+  <main id="main">
+    {% block body %}{% endblock %}
+  </main>
 
   <footer class="sitefoot">
     <a href="/download">download</a>
