@@ -90,6 +90,20 @@ point here — say it plainly and it does more work than a trust badge.
   have an account. Reading stays open — profiles, albums, `/recent` and search
   need no account, because an index nobody can link into or preview isn't a
   shared index. Login gates *writing*: rating, cosigning, following, pairing.
+- **Prose gets a measure; cards don't.** The 880px shell is right for a shelf
+  of verdict cards and wrong for the one page that is mostly paragraphs — about
+  ninety characters a line in Special Elite and nearer a hundred and thirty in
+  Caveat. `.landing p` is capped in `ch` rather than px, because `ch` is
+  measured in the paragraph's own font and the two faces then land near the
+  same character count without two hand-tuned numbers drifting apart. Scoped by
+  a `landing` class on `<main>`, set from `{% block main_class %}`.
+- **Keyboard and motion, which style.css already had and this didn't.** A skip
+  link (parked off-screen, not `display:none` — a hidden element isn't
+  focusable), a `:focus-visible` ring, and `prefers-reduced-motion`. That last
+  one matters more than it looks: `.card`'s drop-in is charming once and is
+  forty rotating pieces of paper on `/recent`.
+- **44px targets on small screens** by growing the box, not the type, so the
+  chrome looks identical and a thumb can still hit a 13px nav link.
 - **Keep Postgres off the front page.** As built: the ticker is the only thing
   on `/` that queries at all, it's cached for two minutes, and the response
   carries `Cache-Control: public, max-age=120` so a CDN absorbs the rest. The
