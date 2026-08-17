@@ -16,3 +16,9 @@ covers/
 *.db
 .env
 .pytest_cache/
+
+# vercel CLI: the project link, and every pulled copy of the environment.
+# `vercel env pull` writes real secrets, so this must stay broader than `.env`.
+# .env.example is already tracked and stays that way.
+.vercel
+.env*

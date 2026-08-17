@@ -1,0 +1,35 @@
+# What the serverless function does NOT need.
+#
+# Git-based deploys only ever ship tracked files, so this file exists for
+# `vercel deploy` from a working copy — which ignores .gitignore and would
+# otherwise upload both .exe builds, dist/, release/ and your local library:
+# 327MB of widget for a server that uses none of it.
+#
+# It also keeps the lambda small. The function needs api/, server/ and
+# static/ (Flask serves the fonts and the stylesheet itself) and nothing else.
+
+# the Windows widget and everything used to build it
+*.exe
+*.zip
+*.ico
+build/
+dist/
+release/
+installer.iss
+noskips.spec
+scripts/
+assets/
+
+# your library — ratings and cached artwork stay on your machine
+data/
+covers/
+*.db
+
+# development only
+tests/
+docs/
+.pytest_cache/
+__pycache__/
+**/__pycache__/
+.github/
+.env*
