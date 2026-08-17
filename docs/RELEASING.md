@@ -34,26 +34,17 @@ out of `hiddenimports`. PyInstaller analyses bytecode rather than runtime
 behaviour, so it finds `audio.py`'s function-level imports on its own — an
 earlier version of this flag looked like it worked and shipped numpy anyway.
 
-## Upgrading from Rateify
-
-The installer uses a **new AppId**, so it installs alongside an existing
-Rateify rather than over it. On first run the app copies
-`%LOCALAPPDATA%\Programs\Rateify\data\ratings.json` and `covers\` into its own
-folder (`_migrate_from_rateify` in `app.py`) and drops a
-`data\.migrated-from-rateify` marker so it only ever happens once.
-
-The old install is left completely untouched — users uninstall Rateify
-themselves once they've confirmed their shelf came across.
-
 ## GitHub release
 
 ```
 git tag v2.0.0
 git push origin main --tags
+gh release create v2.0.0 release/noskips-Setup-2.0.0.exe release/noskips-2.0.0-portable.zip
 ```
 
-Then on GitHub: *Releases → Draft a new release → choose the tag → attach both
-files from `release/`*.
+Or on the website: *Releases → Draft a new release → choose the tag → attach
+both files from `release/`*. The installer keeps a fixed **AppId**, so each
+release upgrades the previous one in place and leaves `data/` alone.
 
 ## Stores
 

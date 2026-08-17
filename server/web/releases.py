@@ -20,13 +20,13 @@ ARTIFACTS = [
     {
         "kind": "installer",
         "name": f"noskips-Setup-{VERSION}.exe",
-        "bytes": 32_860_015,
+        "bytes": 33_817_964,
         "blurb": "per-user installer, no admin needed",
     },
     {
         "kind": "portable",
         "name": f"noskips-{VERSION}-portable.zip",
-        "bytes": 30_506_788,
+        "bytes": 31_455_342,
         "blurb": "unzip and run, nothing written outside the folder",
     },
 ]

@@ -141,8 +141,7 @@ fallback in `media_kind.py` can be tightened.
 4. **Trademark check** on "noskips" — I searched apps, domains and handles and
    found it clear, but I did not check USPTO/EUIPO. Ten minutes, worth it
    before it goes on anything permanent.
-5. **Re-shoot the README screenshots.** `assets/widget-now.png` and
-   `assets/widget-shelf.png` still show the *rateify* wordmark.
+5. ~~Re-shoot the README screenshots.~~ Done — both now show the real widget.
 
 ---
 
@@ -151,16 +150,12 @@ fallback in `media_kind.py` can be tightened.
 - ~~Push the branch.~~ Done — `noskips-social` and `main` both track origin.
 - ~~Rename the GitHub repo.~~ Done — it is `kaanisthatyou/noskips`, which is
   what `GITHUB_REPO` already defaults to, so nothing needs setting.
-- **Two stale `Rateify.exe` copies** sit in the repo root and `dist/`. They're
-  gitignored build artifacts from before the rename, and clicking one launches
-  the *old* app. Worth deleting so there's nothing old to click by mistake.
-  Note both old and new bind port 7700, so whichever starts second just opens a
-  browser onto the first — that's the trap that makes the new build look broken.
 - **Installer vs your library.** `noskips-Setup-2.0.0.exe` installs to
-  `%LOCALAPPDATA%\Programs\noskips` and will start with an **empty shelf**: the
-  automatic migration only looks for an *installed* Rateify, and you never
-  installed one. Copy `data\ratings.json` (and `covers\`) across by hand, or
-  keep running the exe from the repo root.
+  `%LOCALAPPDATA%\Programs\noskips` and starts with an **empty shelf** — the
+  library that matters lives next to the exe in the repo root. Copy
+  `data\ratings.json` (and `covers\`) across by hand, or keep running the exe
+  from the repo root. Note both builds bind port 7700, so whichever starts
+  second just opens a browser onto the first.
 
 ---
 

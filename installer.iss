@@ -4,9 +4,8 @@
 #define MyAppExeName "noskips.exe"
 
 [Setup]
-; NB: a fresh AppId, not Rateify's. This installs *alongside* an old Rateify
-; rather than over it — the app copies the old library across on first run
-; (see _migrate_from_rateify in app.py) and leaves the old install untouched.
+; The AppId is what Windows upgrades in place — never change it between
+; releases, or a new version installs alongside the old one instead of over it.
 AppId={{7C2E5A19-4B3D-4F86-9A17-D0C8E4B62F31}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}

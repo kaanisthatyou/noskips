@@ -4,8 +4,6 @@ build/
 dist/
 release/
 noskips.exe
-# left over from before the rename
-Rateify.exe
 *.zip
 
 # personal library — your ratings stay yours

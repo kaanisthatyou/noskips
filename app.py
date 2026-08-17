@@ -9,7 +9,6 @@ import asyncio
 import hashlib
 import json
 import os
-import shutil
 import socket
 import sys
 import threading
@@ -51,35 +50,6 @@ VIDEOS_FILE = DATA_DIR / "videos.json"
 
 PORT = 7700
 
-
-def _migrate_from_rateify():
-    """This app used to be called Rateify and installed to its own folder, so an
-    upgrader's library sits next to the *old* exe. Copy it across on first run.
-
-    Deliberately a copy, not a move: the old install keeps working until they
-    uninstall it, and nobody loses a library to a half-finished migration.
-    """
-    if RATINGS_FILE.exists() or (DATA_DIR / ".migrated-from-rateify").exists():
-        return
-    local = os.environ.get("LOCALAPPDATA")
-    if not local:
-        return
-    legacy = Path(local) / "Programs" / "Rateify"
-    if not (legacy / "data" / "ratings.json").exists():
-        return
-    try:
-        shutil.copy2(legacy / "data" / "ratings.json", RATINGS_FILE)
-        if (legacy / "covers").is_dir():
-            shutil.copytree(legacy / "covers", COVERS_DIR, dirs_exist_ok=True)
-        (DATA_DIR / ".migrated-from-rateify").write_text(
-            f"copied from {legacy} on {datetime.now().isoformat(timespec='seconds')}\n",
-            encoding="utf-8",
-        )
-    except OSError:
-        pass  # a failed migration must never stop the app from starting
-
-
-_migrate_from_rateify()
 
 app = Flask(__name__, static_folder=str(BUNDLE / "static"), static_url_path="")
 

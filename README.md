@@ -6,13 +6,9 @@ A tiny Windows widget that shows what Spotify is playing and lets you stamp a
 verdict on every song — typewriter, handwriting, washi tape and all.
 
 <p align="center">
-  <img src="assets/widget-now.png" width="300" alt="now spinning view with the rating drawer open">
+  <img src="assets/widget-now.png" width="300" alt="the now playing view, rating drawer tucked away">
   <img src="assets/widget-shelf.png" width="300" alt="the shelf view">
 </p>
-
-> Previously released as **Rateify** — renamed in 2.0.0 because that name was
-> already taken. Your library comes across automatically the first time you run
-> it; see [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Why it's neat
 

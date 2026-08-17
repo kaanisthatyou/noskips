@@ -248,14 +248,8 @@ const I18N = {
   },
 };
 
-// prefs moved from the rateify_* keys when the app was renamed; read the old
-// key once so an upgrading user keeps their language and theme
 function pref(name, fallback) {
-  return (
-    localStorage.getItem(`noskips_${name}`) ??
-    localStorage.getItem(`rateify_${name}`) ??
-    fallback
-  );
+  return localStorage.getItem(`noskips_${name}`) ?? fallback;
 }
 const setPref = (name, value) => localStorage.setItem(`noskips_${name}`, value);
 
