@@ -38,8 +38,20 @@ def normalize_database_url(url):
     return url
 
 
+DEFAULT_DATABASE_URL = "sqlite:///noskips-dev.db"
+
+
 def database_url():
-    return normalize_database_url(os.environ.get("DATABASE_URL", "sqlite:///noskips-dev.db"))
+    """The connection string, with a blank one treated as no connection string.
+
+    ``or`` rather than a ``get`` default on purpose. .env.example ships every
+    key present and empty, and docs/SERVER.md says to copy it verbatim — which
+    puts ``DATABASE_URL=""`` in the environment. A two-argument ``get`` only
+    falls back when the key is *absent*, so following the documented setup
+    handed SQLAlchemy an empty string and 500'd every request on a fresh
+    checkout. Blank means unset here, everywhere it means anything.
+    """
+    return normalize_database_url(os.environ.get("DATABASE_URL") or DEFAULT_DATABASE_URL)
 
 
 def engine():

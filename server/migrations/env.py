@@ -5,13 +5,12 @@ local SQLite file and against Neon in production with no config edits. Neon's
 pooled connection string is what production should use — see server/db.py.
 """
 
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from server.db import normalize_database_url
+from server.db import database_url as database_url_from_env
 from server.models import Base
 
 config = context.config
@@ -21,9 +20,7 @@ if config.config_file_name is not None:
 
 # one definition of what a pasted Neon URL turns into, shared with the app —
 # a migration that connects differently from the server is its own bug
-database_url = normalize_database_url(
-    os.environ.get("DATABASE_URL", "sqlite:///noskips-dev.db")
-)
+database_url = database_url_from_env()
 config.set_main_option("sqlalchemy.url", database_url)
 
 target_metadata = Base.metadata

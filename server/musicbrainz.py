@@ -33,7 +33,9 @@ from .store import _aware
 
 MB_ROOT = "https://musicbrainz.org/ws/2"
 CAA_ROOT = "https://coverartarchive.org"
-CONTACT = os.environ.get("MUSICBRAINZ_CONTACT", "https://github.com/kaan/noskips")
+# `or`: a blank contact is exactly the rude User-Agent that gets the whole
+# project blocked rather than one request. See server/db.py.
+CONTACT = os.environ.get("MUSICBRAINZ_CONTACT") or "https://github.com/kaan/noskips"
 USER_AGENT = f"noskips/2.0.0 ( {CONTACT} )"
 
 MIN_SCORE = 88  # MusicBrainz's own confidence, 0-100

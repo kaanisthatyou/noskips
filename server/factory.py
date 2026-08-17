@@ -36,12 +36,16 @@ def create_app(config=None):
         static_folder=str(REPO_ROOT / "static"),
         static_url_path="/static",
     )
+    # `or` rather than a get default throughout: .env.example ships every key
+    # present and empty, so a copied .env sets them to "" and a two-argument
+    # get would hand an empty SECRET_KEY to the cookie signer. See server/db.py.
+    base_url = os.environ.get("BASE_URL") or "http://127.0.0.1:5000"
     app.config.update(
-        SECRET_KEY=os.environ.get("SECRET_KEY", "dev-only-not-a-secret"),
-        BASE_URL=os.environ.get("BASE_URL", "http://127.0.0.1:5000"),
+        SECRET_KEY=os.environ.get("SECRET_KEY") or "dev-only-not-a-secret",
+        BASE_URL=base_url,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
-        SESSION_COOKIE_SECURE=os.environ.get("BASE_URL", "").startswith("https"),
+        SESSION_COOKIE_SECURE=base_url.startswith("https"),
         PERMANENT_SESSION_LIFETIME=timedelta(days=90),
         JSON_SORT_KEYS=False,
         MAX_CONTENT_LENGTH=1024 * 1024,  # a sync batch has no business being bigger

@@ -52,13 +52,16 @@ class SmtpSender(EmailSender):
 
 
 def from_env():
-    if os.environ.get("EMAIL_BACKEND", "console") == "smtp":
+    # `or` throughout: .env.example ships these present and empty, so a copied
+    # .env would otherwise give smtplib an empty host and int("") a port.
+    # See server/db.py for why blank has to mean unset everywhere.
+    if (os.environ.get("EMAIL_BACKEND") or "console") == "smtp":
         return SmtpSender(
-            os.environ.get("SMTP_HOST", "smtp.gmail.com"),
-            os.environ.get("SMTP_PORT", 587),
+            os.environ.get("SMTP_HOST") or "smtp.gmail.com",
+            os.environ.get("SMTP_PORT") or 587,
             os.environ["SMTP_USER"],
             os.environ["SMTP_PASSWORD"],
-            os.environ.get("EMAIL_FROM", os.environ.get("SMTP_USER", "")),
+            os.environ.get("EMAIL_FROM") or os.environ.get("SMTP_USER") or "",
         )
     return ConsoleSender()
 

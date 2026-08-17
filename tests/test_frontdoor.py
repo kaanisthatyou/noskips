@@ -445,11 +445,18 @@ def test_a_pasted_connection_string_is_made_connectable(given, expected):
 
 
 def test_the_migrations_connect_the_same_way_the_app_does():
-    """A migration that resolves a different driver from the server is its own
-    bug, so env.py shares the one helper rather than repeating the rewrite."""
+    """A migration that resolves a different URL from the server is its own bug,
+    so env.py shares the whole helper rather than repeating any of it.
+
+    It used to share only ``normalize_database_url`` and keep its own copy of
+    the ``sqlite:///noskips-dev.db`` fallback — which meant the blank-means-unset
+    fix had to be made in two places, and one of them would have been missed.
+    """
     from pathlib import Path
 
     env = Path("server/migrations/env.py").read_text(encoding="utf-8")
 
-    assert "normalize_database_url" in env
-    assert "postgres://" not in env  # no second, drifting copy of the rule
+    assert "from server.db import database_url" in env
+    assert "postgres://" not in env  # no second, drifting copy of the rewrite
+    assert "sqlite:///" not in env  # nor of the fallback
+    assert "DATABASE_URL" not in env.split('"""', 2)[-1]  # nor of the lookup

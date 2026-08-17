@@ -33,7 +33,9 @@ ARTIFACTS = [
 
 # The repo moves when it gets renamed, and the links have to move with it
 # rather than quietly 404 — see docs/NEXT.md.
-REPO = os.environ.get("GITHUB_REPO", "kaanisthatyou/noskips")
+# `or`, not a get default: a copied .env sets GITHUB_REPO="" and every download
+# button and the footer link would point at github.com// — see server/db.py.
+REPO = os.environ.get("GITHUB_REPO") or "kaanisthatyou/noskips"
 
 
 def _mb(size):

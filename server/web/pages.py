@@ -343,7 +343,9 @@ def discord():
     without every link anyone has ever posted going dead."""
     import os
 
-    return redirect(os.environ.get("DISCORD_INVITE", "https://discord.gg/"))
+    # `or`: a copied .env sets this to "", and redirect("") is a redirect to
+    # the current page — an invite link that quietly loops. See server/db.py.
+    return redirect(os.environ.get("DISCORD_INVITE") or "https://discord.gg/")
 
 
 @bp.app_errorhandler(404)
