@@ -89,9 +89,20 @@ a { color: inherit; }
   letter-spacing: 1px;
   text-decoration: none;
 }
-.topbar nav { display: flex; gap: 12px; margin-left: auto; font-size: 13px; }
+.topbar nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-left: auto;
+  font-size: 13px;
+}
 .topbar nav a { color: var(--soft); text-decoration: none; }
 .topbar nav a:hover, .topbar nav a.on { color: var(--ink); text-decoration: underline wavy; }
+/* the one nav item that's a button has to keep the button's ink and its
+   stamped underline-free look, which the rules above would otherwise grey out */
+.topbar nav a.btn { color: var(--ink); }
+.topbar nav a.btn:hover { color: var(--ink); text-decoration: none; }
 
 .card {
   background: var(--card);

@@ -25,7 +25,11 @@
              value="{{ q or '' }}" aria-label="search noskips">
     </form>
 
+    {# download and github sit in the chrome, not only the footer: a reader who
+       is signed in never sees the landing page, and the exe is the product #}
     <nav>
+      <a href="/download">download</a>
+      <a href="https://github.com/{{ github_repo() }}">github</a>
       <a href="/recent">recent</a>
       {% if me %}
         <a href="/feed">feed</a>
@@ -33,6 +37,9 @@
         <a href="/settings">settings</a>
       {% else %}
         <a href="/login">sign in</a>
+        {# the shelf is the reason to have an account, so ask for one as an
+           action rather than a fifth grey word in a row of grey words #}
+        <a class="btn small" href="/signup">start a shelf</a>
       {% endif %}
     </nav>
   </header>

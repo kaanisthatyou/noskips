@@ -78,6 +78,18 @@ point here — say it plainly and it does more work than a trust badge.
 
 ## Build notes
 
+- **Download and github belong in the topbar, not only the footer.** They were
+  footer-only at first, which is wrong for two different readers: a signed-in
+  one is redirected off `/` and never passes the landing page's download
+  section at all, and a stranger evaluating an open-source desktop app looks
+  for the source before the binary. Both are in `base.html`'s nav now, so they
+  are on every page.
+- **Signing up is a button; signing in is a word.** The signed-out nav ends
+  with `sign in` and then `start a shelf` as a `.btn small`. Five grey words in
+  a row is a list, not an invitation, and the shelf is the entire reason to
+  have an account. Reading stays open — profiles, albums, `/recent` and search
+  need no account, because an index nobody can link into or preview isn't a
+  shared index. Login gates *writing*: rating, cosigning, following, pairing.
 - **Keep Postgres off the front page.** As built: the ticker is the only thing
   on `/` that queries at all, it's cached for two minutes, and the response
   carries `Cache-Control: public, max-age=120` so a CDN absorbs the rest. The
