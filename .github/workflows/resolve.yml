@@ -6,7 +6,7 @@
 # for public repos and keeps the schedule visible in the repo.
 #
 # Set two repository secrets:
-#   NOSKIPS_URL      e.g. https://noskips.vercel.app
+#   NOSKIPS_URL      https://noskips-navy.vercel.app
 #   RESOLVER_TOKEN   the same value as the RESOLVER_TOKEN env var on Vercel
 name: resolve
 

@@ -31,7 +31,11 @@ import requests
 
 from server.resolve import identify
 
-DEFAULT_SERVER = os.environ.get("NOSKIPS_SERVER", "https://noskips.vercel.app")
+# The deploy, and what every downloaded exe will talk to — nobody who installs
+# it sets NOSKIPS_SERVER, so this literal is the shipped behaviour. It is the
+# generated *.vercel.app name because noskips.vercel.app was already taken; when
+# a real domain is bought, this is the line to change before building a release.
+DEFAULT_SERVER = os.environ.get("NOSKIPS_SERVER", "https://noskips-navy.vercel.app")
 
 TICK = 2.0  # seconds between worker passes
 DRAIN_EVERY = 10  # ticks — so a batch goes out about every 20s

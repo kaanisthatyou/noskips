@@ -11,19 +11,25 @@ the code no longer has a hole in it that I can close without your accounts.
 
 None of this can be done without your credentials. All free.
 
-| Service | What for | Lands in |
-|---|---|---|
-| [neon.tech](https://neon.tech) | Postgres — use the **pooled** string (`-pooler` in the host) | `DATABASE_URL` |
-| [vercel.com](https://vercel.com) | import the repo; `vercel.json` and `api/index.py` are ready | the deploy |
-| Google Cloud → Credentials → OAuth client (Web) | redirect `<url>/auth/google/callback` | `GOOGLE_CLIENT_ID` / `_SECRET` |
-| discord.com/developers → OAuth2 | redirect `<url>/auth/discord/callback` | `DISCORD_CLIENT_ID` / `_SECRET` |
-| Google account → Security → App passwords | 500 mails/day, no domain needed | `SMTP_USER` / `SMTP_PASSWORD`, `EMAIL_BACKEND=smtp` |
+**The site is up: https://noskips-navy.vercel.app.** Neon is provisioned through
+the Vercel Marketplace, the schema is migrated, and `SECRET_KEY` and `BASE_URL`
+are set on the project. What is left below is sign-in, mail and the cron.
 
-Also set: `SECRET_KEY` (`python -c "import secrets;print(secrets.token_hex(32))"`),
-`BASE_URL`, `ADMIN_HANDLES=kaan`, `RESOLVER_TOKEN`, `MUSICBRAINZ_CONTACT`,
-`DISCORD_INVITE`, `GITHUB_REPO`. Full list with comments in `.env.example`.
+| Service | What for | Lands in | |
+|---|---|---|---|
+| [neon.tech](https://neon.tech) | Postgres — pooled string (`-pooler` in the host) | `DATABASE_URL` | **done** |
+| [vercel.com](https://vercel.com) | the deploy | — | **done** |
+| Google Cloud → Credentials → OAuth client (Web) | redirect `https://noskips-navy.vercel.app/auth/google/callback` | `GOOGLE_CLIENT_ID` / `_SECRET` | |
+| discord.com/developers → OAuth2 | redirect `https://noskips-navy.vercel.app/auth/discord/callback` | `DISCORD_CLIENT_ID` / `_SECRET` | |
+| Google account → Security → App passwords | 500 mails/day, no domain needed | `SMTP_USER` / `SMTP_PASSWORD`, `EMAIL_BACKEND=smtp` | |
 
-Then, once:
+Still to set: `ADMIN_HANDLES=kaan`, `RESOLVER_TOKEN`, `MUSICBRAINZ_CONTACT`,
+`DISCORD_INVITE`. Full list with comments in `.env.example`.
+
+The Marketplace integration provisions `DATABASE_URL` **sensitive**, meaning
+Vercel will not show it back to you — not in `vercel env pull`, not in the
+dashboard. To migrate again, read the string from the Neon console (Vercel →
+Storage → noskips → Open in Neon), then:
 
 ```
 DATABASE_URL=<neon pooled url> python -m alembic upgrade head
@@ -34,22 +40,22 @@ DATABASE_URL=<neon pooled url> python -m alembic upgrade head
 cover art stays blank, duplicate spellings never merge, and — since the same
 tick now does the housekeeping — spent rate-limit rows never get pruned.
 
-**The one that will bite you:** the widget points at
-`https://noskips.vercel.app`, which doesn't exist. `NOSKIPS_SERVER` overrides
-it — but only on a machine where you set it, and nobody who downloads the exe
-will. The literal in `sync.py` is what ships:
+**The one that would have bitten you — settled.** The widget's fallback pointed
+at `https://noskips.vercel.app`, which was already taken by somebody else. The
+deploy lives at `https://noskips-navy.vercel.app` and `sync.py` now ships that:
 
 ```python
-DEFAULT_SERVER = os.environ.get("NOSKIPS_SERVER", "https://noskips.vercel.app")
+DEFAULT_SERVER = os.environ.get("NOSKIPS_SERVER", "https://noskips-navy.vercel.app")
 ```
 
-So: deploy first, change that fallback to the real URL, *then* build the
-release. Ship it before and every download pairs against nothing, silently,
-and the only fix is a new release.
+`NOSKIPS_SERVER` still overrides it, but only on a machine where somebody sets
+it — and nobody who downloads the exe will. **When a real domain is bought,
+change that literal before building the release**, not after: ship it stale and
+every download pairs against nothing, silently, and the only fix is a new
+release.
 
-**The second one:** `GITHUB_REPO` defaults to `kaanisthatyou/noskips`. The repo
-is still called `rateify`, so until you rename it (§5) or set this variable,
-every download button on the site 404s.
+**`GITHUB_REPO` is fine as it is.** It defaults to `kaanisthatyou/noskips` and
+the repo now really is called that, so the download buttons resolve.
 
 ---
 
@@ -142,9 +148,9 @@ fallback in `media_kind.py` can be tightened.
 
 ## 5. Housekeeping
 
-- **Push the branch.** No remote set for `noskips-social`.
-- **Rename the GitHub repo** from `rateify` to `noskips`, then set
-  `GITHUB_REPO` to match — the download buttons and the footer both read it.
+- ~~Push the branch.~~ Done — `noskips-social` and `main` both track origin.
+- ~~Rename the GitHub repo.~~ Done — it is `kaanisthatyou/noskips`, which is
+  what `GITHUB_REPO` already defaults to, so nothing needs setting.
 - **Two stale `Rateify.exe` copies** sit in the repo root and `dist/`. They're
   gitignored build artifacts from before the rename, and clicking one launches
   the *old* app. Worth deleting so there's nothing old to click by mistake.
