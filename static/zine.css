@@ -555,7 +555,27 @@ section h2 { margin-bottom: 8px; }
 @media (max-width: 620px) {
   .searchbox { order: 3; max-width: none; margin: 8px 0 0; }
   .hero-mark { font-size: 40px; }
+
+  /* 13px of text with no padding is an 18px-tall target for a thumb, and the
+     nav and footer are nothing but such links. Growing the box rather than the
+     type keeps the chrome looking the same and makes it hittable. */
+  .topbar nav, .sitefoot { gap: 16px; }
+  .topbar nav a, .sitefoot a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
 }
+
+/* The landing page is the only page here that is mostly prose, and it inherits
+   the 880px shell — which at this type size runs to about ninety characters a
+   line, and closer to a hundred and thirty in Caveat. The eye loses its place
+   on the way back to the left margin. `ch` rather than px because it's measured
+   in the paragraph's own font, so the handwriting and the typewriter each land
+   near the same character count without two hand-tuned numbers. Scoped to the
+   landing page: a verdict card is a caption, not prose, and wants the width. */
+.landing p { max-width: 66ch; }
+.landing .hero-words p { max-width: 54ch; }
 
 /* ------------------------------------------------ keyboard + motion */
 
