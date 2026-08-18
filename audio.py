@@ -79,6 +79,87 @@ class Trace:
             return base64.b64encode(bytes(self._peaks)).decode("ascii")
 
 
+class Listen:
+    """How much of a track was genuinely heard — not how long it was open.
+
+    One slot per second of the song, set as the poller walks through it. The
+    two rules the product cares about fall out of that shape rather than being
+    special-cased:
+
+    * **A rewind pays nothing.** Setting a slot that is already set is a no-op,
+      so hearing the same chorus five times is worth one chorus.
+    * **You cannot bank more than the song.** There are only as many slots as
+      the track has seconds, so coverage is bounded by the track itself.
+
+    A forward *seek* is not listening and is not credited: only the span the
+    player actually moved through between two observations gets filled in, and
+    only when that span is small enough to be playback rather than a jump.
+    """
+
+    # a poll lands about once a second; allow a little lateness before a gap
+    # stops looking like playback and starts looking like a seek
+    MAX_RUN = 4.0
+    MAX_SECONDS = 3 * 60 * 60  # a slot array for a 3h DJ set is still tiny
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.key = ""
+        self._heard = bytearray()
+        self._duration = 0.0
+        self._last_pos = None
+
+    def reset(self, key="", duration=0.0):
+        with self._lock:
+            self._reset(key, duration)
+
+    def _reset(self, key, duration):
+        self.key = key
+        self._duration = float(duration or 0.0)
+        span = min(int(self._duration) + 1, self.MAX_SECONDS) if self._duration > 0 else 0
+        self._heard = bytearray(span)
+        self._last_pos = None
+
+    def feed(self, key, position, duration):
+        """One observation of where the playhead is."""
+        if not key or not duration or duration <= 0:
+            return
+        with self._lock:
+            if key != self.key or abs(float(duration) - self._duration) > 1.5:
+                # a new track, or the player revised the length it reports
+                self._reset(key, duration)
+            if not self._heard:
+                return
+
+            pos = max(0.0, min(float(position), self._duration))
+            last = self._last_pos
+            self._last_pos = pos
+
+            start = pos
+            if last is not None and 0 <= pos - last <= self.MAX_RUN:
+                # played through this stretch since the last look — credit it
+                start = last
+            first, last_slot = int(start), int(pos)
+            for i in range(max(0, first), min(last_slot + 1, len(self._heard))):
+                self._heard[i] = 1
+
+    def _seconds(self):
+        return sum(self._heard)
+
+    def heard(self, key=None):
+        """``(seconds_heard, coverage)`` for a track, or ``(0, 0.0)``.
+
+        Passing the key you are about to stamp is the point: it refuses to hand
+        you somebody else's listening for the song you happen to be rating.
+        """
+        with self._lock:
+            if not self._heard or (key is not None and key != self.key):
+                return 0, 0.0
+            seconds = self._seconds()
+            if self._duration <= 0:
+                return seconds, 0.0
+            return seconds, min(1.0, seconds / self._duration)
+
+
 class Visualizer:
     """Loopback capture, or nothing at all — never a hang."""
 

@@ -53,6 +53,7 @@ def callback(provider):
         email=info.get("email"),
         email_verified=info.get("email_verified", False),
         display_name=info.get("display_name"),
+        username=info.get("username"),
     )
     if user.is_banned:
         raise ApiError("this account is suspended", 403, "banned")

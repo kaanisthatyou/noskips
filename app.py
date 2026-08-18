@@ -3,7 +3,7 @@
 Reads Windows' media session (SMTC), so no Spotify API keys are needed.
 Run:  python app.py   → opens http://127.0.0.1:7700
 """
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 import asyncio
 import hashlib
@@ -20,7 +20,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 
 import media_kind
-from audio import Visualizer, procedural_bands
+from audio import Listen, Visualizer, procedural_bands
 from sync import SyncEngine
 
 from winrt.windows.media.control import (
@@ -110,6 +110,10 @@ def _library_as_ops():
             "updated_at": info.get("date"),
             "is_public": info.get("public", True),
             "note_public": info.get("notePublic", True),
+            # zero for anything rated before the widget started measuring; the
+            # backfill states what it knows and doesn't invent the rest
+            "listened_ms": int(info.get("listenedMs") or 0),
+            "coverage": float(info.get("coverage") or 0.0),
         }
         for entry in data["albums"].values()
         for title, info in entry["tracks"].items()
@@ -125,6 +129,12 @@ SYNC = SyncEngine(
 # Listening is off until asked for. See audio.py for why every part of it is
 # written to fail into "not available" rather than to block.
 VIS = Visualizer()
+
+# How much of the current track has actually been heard. Unlike the trace this
+# runs whether or not the visualizer is on: it needs no audio device, only the
+# playhead Windows is already telling us about, and a verdict stamped with the
+# visualizer off should still know how much of the song went past.
+LISTEN = Listen()
 
 
 # ------------------------------------------------------------ SMTC worker ----
@@ -214,6 +224,16 @@ async def _poll_forever():
             with _now_lock:
                 _now.clear()
                 _now.update(snap)
+
+            # How much of this song has gone past. Only while it is actually
+            # playing — a paused player sitting on 0:42 is not listening, and
+            # crediting it would make "time listened" mean "app left open".
+            if snap.get("active") and snap.get("playing"):
+                LISTEN.feed(
+                    f"{snap['artist']}:::{snap['album']}:::{snap['title']}",
+                    snap.get("position", 0),
+                    snap.get("duration", 0),
+                )
 
             # one observation per second, which is about one per trace bucket
             # on a four-minute song — the resolution the trace was sized for
@@ -349,6 +369,15 @@ def api_rate():
         if live and VIS.enabled and VIS.trace.key == f"{artist}:::{album}:::{title}":
             trace = VIS.trace.snapshot()
 
+        # How much of this song went past before the verdict. Keyed to the
+        # track being stamped, so rating something from memory while another
+        # song plays can't borrow that song's listening.
+        heard_s, coverage = LISTEN.heard(f"{artist}:::{album}:::{title}")
+        # a restamp keeps the best sitting, not the latest one — somebody who
+        # heard it whole last week and skims it today hasn't heard less of it
+        listened_ms = max(int(heard_s * 1000), int(previous.get("listenedMs") or 0))
+        coverage = round(max(coverage, float(previous.get("coverage") or 0.0)), 3)
+
         record = {
             "value": round(float(body["value"]), 2),
             "label": body["label"],
@@ -363,6 +392,9 @@ def api_rate():
             "rev": int(previous.get("rev", 0)) + 1,
             "public": bool(body.get("public", True)),
             "notePublic": bool(body.get("notePublic", True)),
+            # how much of it was heard, and what share of its length that was
+            "listenedMs": listened_ms,
+            "coverage": coverage,
         }
         entry["tracks"][title] = record
         _save(data, kind)
@@ -391,6 +423,8 @@ def api_rate():
             "is_public": record["public"],
             "note_public": record["notePublic"],
             "provenance": "live" if live else "web",
+            "listened_ms": record["listenedMs"],
+            "coverage": record["coverage"],
         }
     )
     return jsonify(ok=True, albumAvg=avg, sync=SYNC.status())
@@ -577,7 +611,39 @@ def _acquire_singleton():
 def _run_flask(lock_socket):
     from werkzeug.serving import make_server
 
-    make_server("127.0.0.1", PORT, app, fd=lock_socket.fileno()).serve_forever()
+    # threaded, and not optionally: /api/spectrum is a stream that never ends,
+    # and werkzeug's default server handles one request at a time. Without this
+    # the first client to open the spectrum starves every other request — the
+    # now-playing poll, rating, the shelf — until the widget is restarted.
+    make_server(
+        "127.0.0.1", PORT, app, fd=lock_socket.fileno(), threaded=True
+    ).serve_forever()
+
+
+# Windows 11 rounds a window's corners for you, and composites them itself, so
+# the curve is anti-aliased against whatever is behind it. That is the whole
+# reason to ask the OS rather than to draw a rounded div: a border-radius on the
+# page can only ever round the *contents*, leaving the window's own square
+# corners around it.
+_DWMWA_WINDOW_CORNER_PREFERENCE = 33
+_DWMWCP_ROUNDSMALL = 3  # the tighter radius, which suits a 40px bar
+
+
+def _round_corners():
+    """Round the window's corners. A no-op anywhere this isn't supported."""
+    try:
+        import ctypes
+
+        hwnd = ctypes.windll.user32.FindWindowW(None, "noskips")
+        if not hwnd:
+            return
+        pref = ctypes.c_int(_DWMWCP_ROUNDSMALL)
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            hwnd, _DWMWA_WINDOW_CORNER_PREFERENCE, ctypes.byref(pref), ctypes.sizeof(pref)
+        )
+    except Exception:
+        # older Windows, or no dwmapi — square corners are not worth a crash
+        pass
 
 
 def _run_widget(lock_socket):
@@ -594,8 +660,13 @@ def _run_widget(lock_socket):
         frameless=True,
         on_top=True,
         resizable=True,
-        background_color="#f0e9d8",
-        transparent=True,  # lets the tucked-away mini bar show the desktop through it
+        background_color="#fbf6ea",
+        # NOT transparent. pywebview's transparent path makes the WebView2
+        # render transparent but never makes the form behind it transparent, so
+        # what showed through was SystemColors.Control (#f0f0f0) — a hard grey
+        # rectangle with the rounded mini bar sitting inside it. The window is
+        # opaque and its own corners are rounded instead; see _round_corners.
+        transparent=False,
         min_size=(150, 40),  # default is (200, 100) — taller than our 40px mini bar,
         # so the window used to refuse to shrink past 100px, leaving blank space below it
     )
@@ -611,6 +682,7 @@ def _run_widget(lock_socket):
         window.resize(int(width), int(height))
 
     window.expose(close, minimize, resize)
+    window.events.shown += lambda: _round_corners()
     webview.start()  # blocks until the window is closed
 
 

@@ -103,6 +103,9 @@ class Identity(Base):
     provider: Mapped[str] = mapped_column(String(16))  # 'google' | 'discord'
     provider_uid: Mapped[str] = mapped_column(String(64))
     email_at_provider: Mapped[str | None] = mapped_column(String(254))
+    # what they're called *there* — shown next to the provider's mark on a
+    # profile, so "who is this on discord" is answerable without asking
+    username_at_provider: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     user: Mapped[User] = relationship(back_populates="identities")
@@ -222,6 +225,8 @@ class Rating(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "work_id"),
         Index("ix_ratings_user_recent", "user_id", "rated_at"),
+        # the leaderboards group by user and filter on coverage
+        Index("ix_ratings_listening", "user_id", "coverage"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=_uuid)
@@ -241,6 +246,14 @@ class Rating(Base):
     # 'web'   — entered from memory on the site
     provenance: Mapped[str] = mapped_column(String(8), default="web")
     device_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("devices.id", ondelete="SET NULL"))
+
+    # How much of the song was actually heard before this verdict, and what
+    # share of its length that came to. Measured by the widget as coverage of
+    # distinct seconds of the track (audio.Listen), so re-hearing the same
+    # chorus five times is worth one chorus and nothing can exceed 1.0.
+    # Zero on anything stamped from the web, or by a widget too old to measure.
+    listened_ms: Mapped[int] = mapped_column(Integer, default=0)
+    coverage: Mapped[float] = mapped_column(Numeric(4, 3), default=0)
 
     # the client's monotonic revision for this track, for last-write-wins sync
     rev: Mapped[int] = mapped_column(Integer, default=1)

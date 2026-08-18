@@ -71,6 +71,9 @@ def profile(provider, token):
             "email": info.get("email"),
             "email_verified": bool(info.get("email_verified")),
             "display_name": info.get("name") or info.get("given_name"),
+            # Google has no @handle to point at, so there is nothing to print
+            # next to a mark on a profile
+            "username": None,
         }
 
     if provider == "discord":
@@ -80,6 +83,8 @@ def profile(provider, token):
             "email": info.get("email"),
             "email_verified": bool(info.get("verified")),
             "display_name": info.get("global_name") or info.get("username"),
+            # the @name, not the display name: it's the one you can be found by
+            "username": info.get("username"),
         }
 
     raise ValueError(f"unknown provider {provider!r}")

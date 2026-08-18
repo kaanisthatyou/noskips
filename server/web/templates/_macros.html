@@ -1,3 +1,59 @@
+{# The provider marks. Inline, as paths, because the site makes no
+   third-party requests at all — a brand icon fetched from a CDN would be the
+   first one, and it would tell that CDN who is reading which page.
+
+   Both are sized in `em`, so they take the scale of whatever they sit inside
+   rather than needing a variant per context. Discord's is drawn in
+   currentColor and picks up the theme; Google's keeps its four brand colours
+   (see below). #}
+{% macro provider_mark(provider, size="1em") %}
+  {%- if provider == "discord" -%}
+    <svg class="pmark" viewBox="0 0 127 96" width="{{ size }}" height="{{ size }}"
+         aria-hidden="true" focusable="false" fill="currentColor">
+      <path d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83
+               A97.68 97.68 0 0 0 49 6.83 72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09
+               C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15
+               a77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18
+               c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0
+               c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19
+               a77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14
+               c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69
+               C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Z
+               m42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53
+               s-5.04 12.69-11.43 12.69Z"/>
+    </svg>
+  {%- elif provider == "google" -%}
+    {# Google's mark is four fixed brand colours; drawn as given rather than in
+       currentColor, because a recoloured Google 'G' is not the Google 'G'. #}
+    <svg class="pmark" viewBox="0 0 48 48" width="{{ size }}" height="{{ size }}"
+         aria-hidden="true" focusable="false">
+      <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84
+        c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+      <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52
+        c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7
+        C7.96 41.07 15.4 46 24 46z"/>
+      <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34
+        A21.99 21.99 0 0 0 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+      <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31
+        C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7
+        c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+    </svg>
+  {%- endif -%}
+{% endmacro %}
+
+
+{# "continue with discord", with the mark pushed to the right edge of the
+   button. The label stays first so the button still reads as a sentence with
+   images off, and the mark is decorative — never the only thing naming the
+   provider. #}
+{% macro oauth_button(provider, next_url) %}
+<a class="btn oauth" href="/auth/{{ provider }}?next={{ next_url|urlencode }}">
+  <span>continue with {{ provider }}</span>
+  {{ provider_mark(provider, "1.15em") }}
+</a>
+{% endmacro %}
+
+
 {# One verdict, rendered the same everywhere it appears: a profile, an album
    page, the feed. `show_who` toggles the byline — redundant on someone's own
    shelf, essential in a feed. #}
@@ -46,7 +102,8 @@
     </p>
   </div>
 
-  <div class="score">
+  {# a ten gets the heavier press; see .score.perfect in zine.css #}
+  <div class="score{% if r.value|float >= 10 %} perfect{% endif %}">
     <b>{{ r.value|score }}</b>
     <span>{{ r.label }}</span>
   </div>

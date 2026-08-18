@@ -19,6 +19,8 @@ from . import bp, presenters
 MAX_OPS = 200
 MAX_NOTE = 2000
 MAX_TRACE = 1024
+# twelve hours against one track is not a song, it is a stuck clock
+MAX_LISTENED_MS = 12 * 60 * 60 * 1000
 
 
 def _dt(value):
@@ -83,6 +85,17 @@ def _apply(op, device):
 
     note = (op.get("note") or "").strip()[:MAX_NOTE] or None
     trace = (op.get("trace") or "")[:MAX_TRACE] or None
+
+    # How much of the song went past, as measured by the widget. Only a paired
+    # device can claim any: the web form has no playhead to watch, and letting
+    # a bare POST assert its own listening would make the boards worthless.
+    listened_ms, coverage = 0, 0.0
+    if device is not None:
+        try:
+            listened_ms = max(0, min(int(op.get("listened_ms") or 0), MAX_LISTENED_MS))
+            coverage = min(1.0, max(0.0, float(op.get("coverage") or 0.0)))
+        except (TypeError, ValueError):
+            listened_ms, coverage = 0, 0.0
     # only a paired widget may claim it was stamped live
     provenance = "live" if (op.get("provenance") == "live" and device is not None) else "web"
 
@@ -104,6 +117,8 @@ def _apply(op, device):
             is_public=bool(op.get("is_public", True)),
             note_public=bool(op.get("note_public", not g.user.notes_private_default)),
             device_id=device.id if device else None,
+            listened_ms=listened_ms,
+            coverage=coverage,
         )
     except ConflictSkipped:
         # the server already holds a newer verdict; the widget should take ours

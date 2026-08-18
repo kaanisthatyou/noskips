@@ -91,7 +91,7 @@ def reset_password(session, token, new_password):
 
 
 def user_for_oauth(session, provider, provider_uid, email=None, email_verified=False,
-                   display_name=None):
+                   display_name=None, username=None):
     """Find or create the account behind a Google/Discord login.
 
     Returns (user, created).
@@ -102,7 +102,15 @@ def user_for_oauth(session, provider, provider_uid, email=None, email_verified=F
             Identity.provider == provider, Identity.provider_uid == provider_uid
         )
     )
+    username = (username or "").strip()[:64] or None
     if identity is not None:
+        # people rename themselves; a stale handle on a profile is worse than
+        # none, and this is the one moment we're allowed to ask the provider.
+        # Only ever written to, never cleared: a provider that answers without
+        # a username this once (or has none at all, like Google) must not wipe
+        # a name we already knew.
+        if username:
+            identity.username_at_provider = username
         return session.get(User, identity.user_id), False
 
     user = None
@@ -134,6 +142,7 @@ def user_for_oauth(session, provider, provider_uid, email=None, email_verified=F
             provider=provider,
             provider_uid=provider_uid,
             email_at_provider=email,
+            username_at_provider=username,
         )
     )
     session.flush()

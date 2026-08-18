@@ -59,7 +59,7 @@
             {{ a.rated_tracks }} matching track{{ a.rated_tracks != 1 and "s" or "" }} rated
           </p>
         </div>
-        <div class="score"><b>{{ a.average|score }}</b><span>AVERAGE</span></div>
+        <div class="score small"><b>{{ a.average|score }}</b><span>average</span></div>
       </a>
     {% endfor %}
   </div>

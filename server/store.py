@@ -117,6 +117,8 @@ def upsert_rating(
     is_public=True,
     note_public=True,
     device_id=None,
+    listened_ms=0,
+    coverage=0.0,
 ):
     """Store or replace this user's verdict on a song, creating the work if this
     is the first verdict anyone has ever stamped on it.
@@ -133,6 +135,10 @@ def upsert_rating(
     )
     now = utcnow()
     value = round(float(value), 2)
+    # coverage is a share of one song and cannot exceed it; a client claiming
+    # 3.0 is either broken or lying, and either way the answer is the same
+    listened_ms = max(0, int(listened_ms or 0))
+    coverage = min(1.0, max(0.0, float(coverage or 0.0)))
 
     if rating is None:
         rating = Rating(
@@ -147,6 +153,8 @@ def upsert_rating(
             is_public=is_public,
             note_public=note_public,
             device_id=device_id,
+            listened_ms=listened_ms,
+            coverage=coverage,
             rated_at=rated_at or now,
             updated_at=updated_at or now,
         )
@@ -169,6 +177,12 @@ def upsert_rating(
         rating.is_public = is_public
         rating.note_public = note_public
         rating.updated_at = incoming
+        # Listening is the one field a restamp may only ever grow. Everything
+        # else here is a fresh opinion replacing an old one, but how much of the
+        # song somebody has heard is a fact about the past: skimming a track you
+        # once sat all the way through does not unhear it.
+        rating.listened_ms = max(int(rating.listened_ms or 0), listened_ms)
+        rating.coverage = max(float(rating.coverage or 0.0), coverage)
         if device_id:
             rating.device_id = device_id
 

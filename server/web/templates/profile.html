@@ -22,6 +22,11 @@
       {% if who.display_name and who.display_name != who.handle %}
         <p class="tagline">{{ who.display_name }}</p>
       {% endif %}
+      {# who they are on discord, for the half of this that happens in there #}
+      {% set discord = not private and discord_name(who) %}
+      {% if discord %}
+        <p class="provider-tag">{{ m.provider_mark("discord", "1.05em") }}<span>{{ discord }}</span></p>
+      {% endif %}
       {% if who.bio %}<p class="hand">{{ who.bio }}</p>{% endif %}
       <p class="muted">keeping receipts since {{ who.created_at|day }}</p>
     </div>
@@ -47,8 +52,50 @@
       <div class="stat press"><b>{{ stats.first_presses }}</b><span>FIRST PRESSES</span></div>
       <div class="stat"><b>{{ stats.followers }}</b><span>FOLLOWERS</span></div>
     </div>
+
+    {# Time actually spent listening, over four rolling windows. Measured by
+       the widget, so a shelf built entirely from the web reads zero — which is
+       the honest answer, not a bug. #}
+    <div class="tear"></div>
+    <div class="heard">
+      <h3 class="heard-head">time listened</h3>
+      <div class="heard-row">
+        <div class="heard-cell"><b>{{ heard.day|listened }}</b><span>today</span></div>
+        <div class="heard-cell"><b>{{ heard.week|listened }}</b><span>this week</span></div>
+        <div class="heard-cell"><b>{{ heard.month|listened }}</b><span>this month</span></div>
+        <div class="heard-cell all"><b>{{ heard.all|listened }}</b><span>all time</span></div>
+      </div>
+      <p class="muted"><a href="/leaderboard?board=time&period=week">see the boards</a></p>
+    </div>
   {% endif %}
 </div>
+
+{% if not private and badges %}
+  <div class="card">
+    <h3 class="heard-head">the wall</h3>
+    <div class="badges">
+      {% for b in badges %}
+        <div class="badge{% if not b.earned %} locked{% endif %}"
+             title="{{ b.blurb }}{% if b.next %} — {{ b.next - b.count }} to go{% endif %}">
+          <div class="badge-die" aria-hidden="true">
+            <span class="badge-mark">{{ b.mark or "·" }}</span>
+            {# the ring fills as the next tier gets closer #}
+            <svg class="badge-ring" viewBox="0 0 36 36" aria-hidden="true">
+              <circle class="ring-track" cx="18" cy="18" r="16"></circle>
+              <circle class="ring-fill" cx="18" cy="18" r="16"
+                      stroke-dasharray="{{ (b.progress * 100.53)|round(2) }} 100.53"></circle>
+            </svg>
+          </div>
+          <p class="badge-title">{{ b.title }}</p>
+          <p class="badge-blurb">{{ b.blurb }}</p>
+          <p class="badge-count">
+            {{ b.count }}{% if b.next %} <span class="muted">/ {{ b.next }}</span>{% endif %}
+          </p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
 
 {% if not private %}
   {% if verdicts %}

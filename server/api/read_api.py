@@ -10,6 +10,7 @@ from collections import defaultdict
 from flask import g, jsonify, request
 from sqlalchemy import func, select
 
+from .. import listening
 from ..models import Block, Follow, Rating, User, Work
 from ..security import ApiError, current_user, require_handle
 from ..store import first_press
@@ -138,11 +139,47 @@ def profile(handle):
     user = _find_user(handle)
     viewer = current_user(g.db)
     visible = _can_read(user, viewer)
+    stats = _stats(user) if visible else {}
+    if visible:
+        heard = listening.listening_breakdown(g.db, user)
+        stats["listened_ms"] = heard
+        stats["badges"] = listening.badges(g.db, user, stats, listened_total=heard["all"])
     return jsonify(
         ok=True,
-        profile=presenters.profile(
-            user, _stats(user) if visible else {}, viewer=viewer, visible=visible
-        ),
+        profile=presenters.profile(user, stats, viewer=viewer, visible=visible),
+    )
+
+
+@bp.get("/leaderboard")
+def leaderboard():
+    """The boards as JSON, on the same two axes as the page.
+
+    Values are raw — milliseconds and counts — so a caller can format them
+    however it likes rather than parsing "4h 12m" back into a number.
+    """
+    kind = request.args.get("board", "time")
+    if kind not in listening.BOARDS:
+        raise ApiError("no such board", 404, "no_board")
+    period = request.args.get("period", "week")
+    if period not in listening.PERIODS:
+        raise ApiError("no such period", 400, "bad_period")
+
+    rows = listening.board(g.db, kind=kind, period=period, limit=_wanted_limit())
+    return jsonify(
+        ok=True,
+        board=kind,
+        period=period,
+        rows=[
+            {
+                "rank": i,
+                "handle": row["user"].handle,
+                "display_name": row["user"].display_name or row["user"].handle,
+                "avatar_seed": row["user"].avatar_seed,
+                # milliseconds on the time board, a plain count on the other
+                "value": row["value"],
+            }
+            for i, row in enumerate(rows, 1)
+        ],
     )
 
 

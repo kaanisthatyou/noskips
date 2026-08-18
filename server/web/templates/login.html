@@ -1,15 +1,14 @@
 {% extends "base.html" %}
+{% import "_macros.html" as m %}
 {% block title %}{{ mode == "signup" and "sign up" or "sign in" }} — noskips{% endblock %}
 
 {% block body %}
 <div class="card narrow">
   <h2>{{ mode == "signup" and "start a shelf" or "sign in" }}</h2>
 
-  {% for provider in config.OAUTH_PROVIDERS %}
-    <a class="btn" style="margin-top:10px" href="/auth/{{ provider }}?next={{ next_url|urlencode }}">
-      continue with {{ provider }}
-    </a>
-  {% endfor %}
+  <div class="oauth-row">
+    {% for provider in config.OAUTH_PROVIDERS %}{{ m.oauth_button(provider, next_url) }}{% endfor %}
+  </div>
 
   {% if config.OAUTH_PROVIDERS %}<div class="tear"></div>{% endif %}
 

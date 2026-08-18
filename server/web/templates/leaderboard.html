@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — noskips{% endblock %}
+{% block og_title %}the {{ title }} board on noskips{% endblock %}
+{% block og_desc %}{{ blurb }}{% endblock %}
+
+{% block body %}
+<div class="card">
+  <h1>the boards</h1>
+
+  {# Two boards and four windows. Both are plain links rather than a control:
+     every combination is its own URL, so one can be bookmarked, linked in the
+     discord, and read with no javascript at all. #}
+  <nav class="board-tabs" aria-label="which board">
+    {% for slug, pair in board_titles.items() %}
+      <a class="tab{% if slug == kind %} on{% endif %}"
+         href="/leaderboard?board={{ slug }}&period={{ period }}"
+         {% if slug == kind %}aria-current="page"{% endif %}>{{ pair[0] }}</a>
+    {% endfor %}
+  </nav>
+
+  <nav class="board-tabs periods" aria-label="over what stretch">
+    {% for slug, label in period_labels.items() %}
+      <a class="tab small{% if slug == period %} on{% endif %}"
+         href="/leaderboard?board={{ kind }}&period={{ slug }}"
+         {% if slug == period %}aria-current="page"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  <p class="muted board-blurb">{{ blurb }} · {{ period_labels[period] }}</p>
+
+  {% if rows %}
+    <ol class="board">
+      {% for row in rows %}
+        <li class="board-row{% if me and row.user.id == me.id %} you{% endif %}">
+          <span class="rank">{{ loop.index }}</span>
+          <a class="avatar tiny" href="/@{{ row.user.handle }}"
+             style="{{ avatar_style(row.user.avatar_seed, 30) }}" aria-hidden="true"></a>
+          <a class="board-who" href="/@{{ row.user.handle }}">@{{ row.user.handle }}</a>
+          <span class="board-value">
+            {% if kind == "time" %}{{ row.value|listened }}{% else %}{{ row.value }}{% endif %}
+          </span>
+        </li>
+      {% endfor %}
+    </ol>
+
+    {% if mine and mine > 12 %}
+      <p class="muted">you're {{ mine }}{{ mine|ordinal }} on this one.</p>
+    {% endif %}
+  {% else %}
+    <div class="empty">
+      <p class="empty-big">nothing yet</p>
+      <p class="empty-small">
+        {% if period == "day" %}nobody has stamped anything today — the day is young
+        {% else %}no one has made it onto this board yet{% endif %}
+      </p>
+    </div>
+  {% endif %}
+
+  <div class="tear"></div>
+  <p class="muted">
+    time comes from the widget, which watches what your player is actually
+    doing. <a href="/download">get it</a> and you're on the board.
+  </p>
+</div>
+{% endblock %}

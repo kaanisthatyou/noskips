@@ -30,6 +30,7 @@ from ..api.read_api import (
     search_people,
     search_works,
 )
+from .. import listening
 from ..models import Follow, Rating, Work, utcnow
 from ..resolve import normalize_query
 from ..security import ApiError, current_user
@@ -186,7 +187,10 @@ def profile(handle):
 
     viewer = current_user(g.db)
     if not _can_read(user, viewer):
-        return render_template("profile.html", who=user, private=True, stats=None, verdicts=[])
+        return render_template(
+            "profile.html", who=user, private=True, stats=None,
+            heard=None, badges=None, verdicts=[],
+        )
 
     following = False
     if viewer is not None and viewer.id != user.id:
@@ -196,11 +200,15 @@ def profile(handle):
             .where(Follow.follower_id == viewer.id, Follow.followee_id == user.id)
         ) > 0
 
+    stats = _stats(user)
+    heard = listening.listening_breakdown(g.db, user)
     return render_template(
         "profile.html",
         who=user,
         private=False,
-        stats=_stats(user),
+        stats=stats,
+        heard=heard,
+        badges=listening.badges(g.db, user, stats, listened_total=heard["all"]),
         verdicts=_verdict_rows(user, viewer),
         following=following,
     )
@@ -335,6 +343,40 @@ def settings():
         return redirect("/login?next=/settings")
     devices = [d for d in me.devices if d.revoked_at is None]
     return render_template("settings.html", devices=devices)
+
+
+BOARD_TITLES = {
+    "time": ("time listened", "hours actually spent with the music"),
+    "stamps": ("stamps", "verdicts stamped and stood behind"),
+}
+PERIOD_LABELS = {"day": "today", "week": "this week", "month": "this month", "all": "all time"}
+
+
+@bp.get("/leaderboard")
+def leaderboard():
+    """Two boards, because there are two ways to be here: the people who listen
+    and the people who commit to an opinion about what they listened to."""
+    kind = request.args.get("board", "time")
+    if kind not in listening.BOARDS:
+        kind = "time"
+    period = request.args.get("period", "week")
+    if period not in listening.PERIODS:
+        period = "week"
+
+    rows = listening.board(g.db, kind=kind, period=period, limit=50)
+    me = current_user(g.db)
+    return render_template(
+        "leaderboard.html",
+        kind=kind,
+        period=period,
+        rows=rows,
+        title=BOARD_TITLES[kind][0],
+        blurb=BOARD_TITLES[kind][1],
+        board_titles=BOARD_TITLES,
+        period_labels=PERIOD_LABELS,
+        # so somebody can find themselves in a list of fifty
+        mine=next((i for i, r in enumerate(rows, 1) if me and r["user"].id == me.id), None),
+    )
 
 
 @bp.get("/discord")

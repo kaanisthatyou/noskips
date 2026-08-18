@@ -42,6 +42,27 @@ def score(value):
 
 
 @bp.app_template_filter()
+def listened(ms):
+    """Milliseconds as a stretch of time a person would say out loud."""
+    from ..listening import humanize_ms
+
+    return humanize_ms(ms)
+
+
+@bp.app_template_filter()
+def ordinal(n):
+    """The suffix only — templates print the number themselves.
+
+    The teens are the whole reason this exists: 11th, 12th and 13th do not
+    follow the rule the last digit would give them.
+    """
+    n = int(n or 0)
+    if 11 <= (n % 100) <= 13:
+        return "th"
+    return {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+
+
+@bp.app_template_filter()
 def day(dt):
     return dt.strftime("%d %b %Y").lower() if dt else ""
 
@@ -64,6 +85,21 @@ def trace_points(encoded):
     from audio import trace_to_points
 
     return trace_to_points(encoded)
+
+
+@bp.app_template_global()
+def discord_name(user):
+    """The Discord handle behind an account, if it signed in that way.
+
+    Only Discord: Google has no public @name to point at, and printing somebody
+    else's gmail address on a public page would be a different thing entirely.
+    Returns None when there's nothing to show, so the template renders nothing
+    rather than an empty mark floating beside the handle.
+    """
+    for identity in user.identities:
+        if identity.provider == "discord" and identity.username_at_provider:
+            return identity.username_at_provider
+    return None
 
 
 @bp.app_template_global()

@@ -244,19 +244,118 @@ label { display: block; font-size: 11px; letter-spacing: .1em; color: var(--soft
 .verdict-foot { display: flex; gap: 10px; align-items: center; margin-top: 8px; font-size: 10.5px; color: var(--soft); }
 
 /* the number, stamped rather than printed */
+/* ---- the stamp ----------------------------------------------------------
+ *
+ * The thing the product is named for, so it has to look pressed rather than
+ * drawn: two rings, ink that sits slightly off-register, and a number big
+ * enough to read across a room. The old version was one hairline circle and a
+ * number that fell out of it.
+ *
+ * Built from borders and shadows rather than an image so it recolours with the
+ * theme and stays sharp at any zoom.
+ */
 .score {
   flex: none;
   align-self: flex-start;
-  min-width: 52px;
-  text-align: center;
-  padding: 5px 6px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  padding: 2px;
   color: var(--stamp);
-  border: 2px solid var(--stamp);
-  border-radius: 45% 55% 50% 50% / 55% 45% 55% 45%;
-  transform: rotate(-6deg);
+  border: 3px solid var(--stamp);
+  /* not a circle: a hand-cut rubber die never is */
+  border-radius: 48% 52% 51% 49% / 52% 49% 51% 48%;
+  transform: rotate(-8deg);
+  /* The inner ring. Kept free of color-mix() on purpose: one unsupported
+     value invalidates the whole declaration, and losing the rings would leave
+     the stamp looking exactly as thin as the one this replaced. The ink-spread
+     halo is on ::before instead, where it can fail on its own. */
+  box-shadow:
+    inset 0 0 0 2px var(--card),
+    inset 0 0 0 4px var(--stamp);
+  /* ink is never perfectly opaque */
+  opacity: .93;
 }
-.score b { display: block; font-size: 21px; font-weight: normal; }
-.score span { font-size: 8.5px; letter-spacing: .05em; }
+
+/* the off-register second impression — the smudge that says this was pressed */
+.score::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 2px solid var(--stamp);
+  border-radius: inherit;
+  opacity: .2;
+  transform: rotate(2.5deg) translate(1px, -1px);
+  pointer-events: none;
+}
+
+.score b {
+  display: block;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: normal;
+  letter-spacing: -.02em;
+}
+.score span {
+  display: block;
+  max-width: 64px;
+  margin-top: 3px;
+  font-size: 8px;
+  line-height: 1.1;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+}
+
+/* A perfect score earns a heavier press — the one number worth shouting. */
+.score.perfect { border-width: 4px; opacity: 1; }
+.score.perfect b { font-size: 28px; }
+
+/* ...and the smaller impression used in dense lists, where a 76px die would
+   push everything else off the row. Same object, half the voice. */
+.score.small {
+  width: 54px;
+  height: 54px;
+  border-width: 2px;
+  box-shadow:
+    inset 0 0 0 1.5px var(--card),
+    inset 0 0 0 3px var(--stamp);
+}
+.score.small b { font-size: 21px; }
+.score.small span { font-size: 7px; max-width: 46px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .verdict:hover .score { transform: rotate(-5deg) scale(1.03); transition: transform .18s ease; }
+}
+
+/* ---- provider marks ---------------------------------------------------- */
+
+.oauth-row { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+
+/* the label sits left, the mark is pushed to the right edge */
+.btn.oauth {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+}
+.pmark { flex: none; vertical-align: -.15em; }
+
+/* beside a name rather than inside a button */
+.provider-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--soft);
+}
+.provider-tag .pmark { color: #5865f2; }
+body.theme-noir .provider-tag .pmark { color: #7d88f7; }
 
 /* stamped while it was genuinely playing */
 .live-mark { color: var(--teal); }
@@ -621,3 +720,145 @@ select:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- time listened ------------------------------------------------------ */
+
+.heard-head {
+  font-size: 12px;
+  font-weight: normal;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--soft);
+  margin-bottom: 10px;
+}
+.heard-row { display: flex; flex-wrap: wrap; gap: 14px 26px; }
+.heard-cell b {
+  display: block;
+  font-size: 20px;
+  font-weight: normal;
+  line-height: 1.1;
+}
+.heard-cell span {
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+/* the total is the one that took years to earn */
+.heard-cell.all b { color: var(--stamp); }
+
+/* ---- the badge wall ----------------------------------------------------- */
+
+.badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 18px 14px;
+}
+.badge { text-align: center; }
+
+/* the die: the same pressed-rubber object as .score, shrunk to a token */
+.badge-die {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 8px;
+  display: grid;
+  place-items: center;
+  color: var(--stamp);
+  border: 2.5px solid var(--stamp);
+  border-radius: 49% 51% 50% 50% / 51% 50% 50% 49%;
+  transform: rotate(-6deg);
+  box-shadow: inset 0 0 0 2px var(--card), inset 0 0 0 3.5px var(--stamp);
+}
+.badge-mark {
+  font-size: 19px;
+  line-height: 1;
+  letter-spacing: .04em;
+  /* roman numerals are the tier; a dot means not started */
+  text-transform: lowercase;
+}
+
+/* progress toward the next tier, drawn around the die */
+.badge-ring {
+  position: absolute;
+  inset: -7px;
+  width: calc(100% + 14px);
+  height: calc(100% + 14px);
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.badge-ring circle { fill: none; stroke-width: 1.5; }
+.ring-track { stroke: var(--line); }
+.ring-fill { stroke: var(--teal); stroke-linecap: round; }
+
+/* not earned yet: still shown, but clearly not yours */
+.badge.locked .badge-die {
+  color: var(--soft);
+  border-color: var(--line);
+  border-style: dashed;
+  box-shadow: none;
+  opacity: .7;
+}
+.badge.locked .badge-title { color: var(--soft); }
+
+.badge-title { font-size: 14px; line-height: 1.2; }
+.badge-blurb { font-size: 10.5px; line-height: 1.3; color: var(--soft); margin-top: 2px; }
+.badge-count { font-size: 12px; margin-top: 4px; }
+
+/* ---- the boards --------------------------------------------------------- */
+
+.board-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.board-tabs.periods { margin-bottom: 12px; }
+
+.tab {
+  padding: 4px 11px;
+  font-size: 13.5px;
+  color: var(--soft);
+  text-decoration: none;
+  border: 1.5px solid var(--line);
+  border-radius: 12px 14px 11px 13px / 14px 11px 14px 12px;
+}
+.tab.small { font-size: 12px; padding: 3px 9px; }
+.tab:hover { color: var(--ink); border-color: var(--soft); }
+.tab.on {
+  color: var(--card);
+  background: var(--stamp);
+  border-color: var(--stamp);
+}
+
+.board-blurb { margin-bottom: 12px; }
+
+.board { list-style: none; }
+.board-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 7px 6px;
+  border-bottom: 1px dashed var(--line);
+}
+.board-row:last-child { border-bottom: none; }
+
+.rank {
+  flex: none;
+  min-width: 26px;
+  font-size: 15px;
+  color: var(--soft);
+  text-align: right;
+}
+/* the podium, without medals */
+.board-row:nth-child(-n+3) .rank { color: var(--stamp); font-size: 18px; }
+
+.avatar.tiny { flex: none; border-radius: 50%; display: block; }
+.board-who { flex: 1; text-decoration: none; }
+.board-who:hover { text-decoration: underline; }
+.board-value { flex: none; font-size: 15px; }
+
+/* where the reader is, if they are anywhere */
+.board-row.you {
+  background: var(--card);
+  border-radius: 8px;
+}
+@supports (background: color-mix(in srgb, red 8%, transparent)) {
+  .board-row.you { background: color-mix(in srgb, var(--stamp) 8%, transparent); }
+}
+.board-row.you .board-who { color: var(--stamp); }

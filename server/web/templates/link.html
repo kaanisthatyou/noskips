@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_macros.html" as m %}
 {% block title %}link a device — noskips{% endblock %}
 {% block body %}
 <div class="card narrow stack">
@@ -14,9 +15,9 @@
     <p class="muted">you're about to connect a copy of noskips running on
       <strong>{{ pairing.device_name or "a windows pc" }}</strong> to your account.</p>
     <div class="tear"></div>
-    {% for provider in providers %}
-      <a class="btn" href="/auth/{{ provider }}?next={{ next_url|urlencode }}">continue with {{ provider }}</a>
-    {% endfor %}
+    <div class="oauth-row">
+      {% for provider in providers %}{{ m.oauth_button(provider, next_url) }}{% endfor %}
+    </div>
     <a class="btn" href="/login?next={{ next_url|urlencode }}">continue with email</a>
 
   {% elif done %}

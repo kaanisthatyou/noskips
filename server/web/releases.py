@@ -12,7 +12,7 @@ installer.iss. docs/RELEASING.md lists all three in one place.
 
 import os
 
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 
 # Sizes are the real bytes of the built artifacts, shown so nobody is surprised
 # by a 30MB download on a hotel connection.
@@ -20,13 +20,13 @@ ARTIFACTS = [
     {
         "kind": "installer",
         "name": f"noskips-Setup-{VERSION}.exe",
-        "bytes": 33_817_964,
+        "bytes": 33_822_667,
         "blurb": "per-user installer, no admin needed",
     },
     {
         "kind": "portable",
         "name": f"noskips-{VERSION}-portable.zip",
-        "bytes": 31_455_342,
+        "bytes": 31_460_297,
         "blurb": "unzip and run, nothing written outside the folder",
     },
 ]

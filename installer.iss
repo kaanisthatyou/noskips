@@ -1,6 +1,6 @@
 ; Inno Setup script for noskips — compile with ISCC.exe installer.iss
 #define MyAppName "noskips"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.1.0"
 #define MyAppExeName "noskips.exe"
 
 [Setup]

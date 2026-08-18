@@ -167,9 +167,13 @@ body.webview { min-height: 0; } /* body must hug content so fitWindow can measur
 body.collapsed .mini-now { display: flex; }
 body.collapsed main { display: none; }
 
-/* the mini bar is a barely-there HUD: transparent window showing through,
-   header chrome fades in only on hover so it stays "almost hidden" */
-body.collapsed { background: transparent; padding: 0; }
+/* The mini bar IS the window. It used to be a rounded pill drawn inside a
+   window asked to be transparent — but pywebview's transparency only reaches
+   the WebView2, not the form behind it, so what actually showed around the
+   pill was Windows' own #f0f0f0: a hard grey rectangle with a rounded thing
+   sitting in it. The window is opaque now and Windows rounds its corners
+   (see _round_corners in app.py), so there is one edge instead of two. */
+body.collapsed { background: var(--card); padding: 0; }
 body.collapsed::after { display: none; }
 body.collapsed .brand,
 body.collapsed .tabs { display: none; }
@@ -183,33 +187,47 @@ body.collapsed header {
   margin-bottom: 0;
 }
 
-/* fruitiger-aero glass pill: frosted blur + gloss highlight over the
-   transparent window, tinted with the current theme's accent colors */
+/* The same aero tint, painted rather than blurred. There is nothing behind the
+   window to blur any more, and a backdrop-filter over an opaque background is
+   just a slower way of drawing nothing. */
 body.collapsed .mini-now {
   position: relative;
   overflow: hidden;
+  height: 100%;
+  padding: 0 8px 0 6px;
+  border: none;
+  border-radius: 0;
   background:
-    linear-gradient(160deg, color-mix(in srgb, var(--teal) 30%, transparent), transparent 55%),
-    linear-gradient(-30deg, color-mix(in srgb, var(--stamp) 22%, transparent), transparent 60%),
-    rgba(255, 255, 255, .14);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, .55);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, .7) inset,
-    0 8px 18px rgba(0, 0, 0, .22);
+    linear-gradient(160deg, color-mix(in srgb, var(--teal) 16%, transparent), transparent 58%),
+    linear-gradient(-30deg, color-mix(in srgb, var(--stamp) 12%, transparent), transparent 62%),
+    var(--card);
 }
+/* a hairline, so the bar still reads as an object against a pale wallpaper */
+body.collapsed { box-shadow: inset 0 0 0 1px var(--line); }
 body.collapsed .mini-now::before {
-  /* glossy highlight sheen across the top third, classic aqua/glass look */
+  /* the gloss stays — it is what made this thing look like an object — but it
+     sits edge to edge now that the bar is not inset inside a window */
   content: "";
   position: absolute;
-  top: 2px; left: 6%;
-  width: 88%; height: 42%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .65), rgba(255, 255, 255, 0));
-  border-radius: 50% 50% 50% 50% / 100% 100% 0 0;
+  top: 0; left: 0;
+  width: 100%; height: 46%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0));
+  pointer-events: none;
+  z-index: 1;
+}
+body.collapsed .mini-now:hover::before { background: linear-gradient(180deg, rgba(255, 255, 255, .68), rgba(255, 255, 255, 0)); }
+
+/* the live bands, across the whole bar and underneath everything on it */
+.mini-spectrum {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  opacity: .5;
   pointer-events: none;
 }
-body.collapsed .mini-now:hover { background: rgba(255, 255, 255, .22); }
+body.collapsed .mini-now.has-track .mini-spectrum { display: block; }
 
 .mini-cover-sm {
   display: none;
@@ -223,7 +241,10 @@ body.collapsed .mini-now:hover { background: rgba(255, 255, 255, .22); }
   position: relative;
   z-index: 1;
 }
-.mini-now.has-track .mini-cover-sm { display: block; }
+/* :not([hidden]) is load-bearing. A plain `display: block` here outranks the
+   hidden attribute's own display:none, so a track with no artwork kept an
+   empty bordered box sitting in the bar where its sleeve should be. */
+.mini-now.has-track .mini-cover-sm:not([hidden]) { display: block; }
 
 .mini-info { min-width: 0; overflow: hidden; position: relative; z-index: 1; }
 .mini-title, .mini-artist {

@@ -309,6 +309,9 @@ applyI18n();
 // setSkin() and is then updated per frame from drawProgress(), so nothing
 // allocates in the animation loop.
 const SKINS = ["spool", "groove", "hiss", "ticker"];
+// declared up here because tapSpectrum() reads it, and that runs from setSkin()
+// during start-up, before the tab wiring further down has been reached
+let collapsed = false;
 let skin = pref("skin", "spool");
 let spectrum = [];      // last frame from /api/spectrum
 let spectrumTap = null; // the EventSource, open only while something needs it
@@ -343,7 +346,10 @@ document.querySelectorAll(".skinbtn").forEach((b) =>
 // Only hold the stream open while something is actually drawing it — an idle
 // EventSource is a thread on the widget's tiny Flask server for no reason.
 function tapSpectrum() {
-  const wanted = skin === "hiss";
+  // The hiss skin needs it, and so does the tucked-away bar, which draws the
+  // same bands across its full width — that motion is the only thing telling
+  // you the bar is live when everything else about it is two lines of text.
+  const wanted = skin === "hiss" || collapsed;
   if (wanted && !spectrumTap) {
     spectrumTap = new EventSource("/api/spectrum");
     spectrumTap.onmessage = (e) => {
@@ -362,6 +368,38 @@ function tapSpectrum() {
     spectrum = [];
   }
 }
+
+function drawMiniSpectrum() {
+  const cv = $("mini-spectrum");
+  if (!cv) return;
+  // match the backing store to the CSS box, or the bars come out blurry on a
+  // scaled display and stretched on a resize
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  const dpr = window.devicePixelRatio || 1;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+  }
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  if (!spectrum.length) return;
+
+  const n = spectrum.length;
+  const slot = w / n;
+  ctx.fillStyle = miniBarInk();
+  for (let i = 0; i < n; i++) {
+    const bh = Math.max(1, (spectrum[i] || 0) * h);
+    ctx.fillRect(i * slot, h - bh, Math.max(1, slot - 1.5), bh);
+  }
+}
+
+// read once per frame rather than per bar; getComputedStyle is not free
+function miniBarInk() {
+  return getComputedStyle(document.body).getPropertyValue("--teal").trim() || "#2f6f66";
+}
+
 
 function drawSkin(progress, playing) {
   const box = $("mini-skin");
@@ -545,7 +583,6 @@ $("priv-note").addEventListener("click", () => {
 const prettyAvg = (v) => (v == null ? "–" : (Math.round(v * 10) / 10).toFixed(1));
 
 // ------------------------------------------------- tabs + window fitting ----
-let collapsed = false;
 
 // ask the native window to hug the content (no-op in a plain browser)
 function fitWindow() {
@@ -560,6 +597,7 @@ function fitWindow() {
 function setCollapsed(c) {
   collapsed = c;
   document.body.classList.toggle("collapsed", c);
+  tapSpectrum(); // the bar wants the bands; the open window doesn't
   fitWindow();
 }
 
@@ -754,7 +792,16 @@ function renderNow() {
     const wantMini = now.cover || "";
     if (miniCover.dataset.src !== wantMini) {
       miniCover.dataset.src = wantMini;
-      miniCover.src = wantMini;
+      // An empty src is not "no image" — the browser resolves it against the
+      // page, fetches the HTML, and draws its broken-image glyph. Plenty of
+      // tracks have no art, and a torn-page icon is a worse answer than a gap.
+      if (wantMini) {
+        miniCover.src = wantMini;
+        miniCover.hidden = false;
+      } else {
+        miniCover.removeAttribute("src");
+        miniCover.hidden = true;
+      }
     }
   }
   if (!now || !now.active) {
@@ -881,6 +928,7 @@ function drawProgress() {
     // the mini bar is driven by the same clock, so it never drifts from the bar
     if (collapsed) drawSkin(progress, clock.playing);
   }
+  if (collapsed) drawMiniSpectrum();
   requestAnimationFrame(drawProgress);
 }
 requestAnimationFrame(drawProgress);
