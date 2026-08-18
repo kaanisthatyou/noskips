@@ -102,6 +102,31 @@ def discord_name(user):
     return None
 
 
+_CAA_PREFIX = "https://coverartarchive.org/release-group/"
+_CAA_SUFFIX = "/front-500"
+
+
+@bp.app_template_global()
+def art_src(cover_url):
+    """A stored cover URL, pointed at our own cache-headed copy.
+
+    Cover Art Archive answers a front-500 with two redirects and no
+    Cache-Control at all, so a browser re-walks the whole chain on every load
+    and a shelf of sixty costs 180 requests. Routing through /art gives the
+    same bytes with a year of immutable on them. See web/art.py.
+
+    Anything that isn't a CAA release-group URL is handed back untouched, so
+    this can never turn a working image into a 404.
+    """
+    if not cover_url:
+        return None
+    if cover_url.startswith(_CAA_PREFIX) and cover_url.endswith(_CAA_SUFFIX):
+        mbid = cover_url[len(_CAA_PREFIX):-len(_CAA_SUFFIX)]
+        if "/" not in mbid:
+            return f"/art/{mbid}/front.jpg"
+    return cover_url
+
+
 @bp.app_template_global()
 def github_repo():
     """The repo the footer and download links point at. One definition, because
@@ -119,7 +144,7 @@ def inject_me():
     return {"me": current_user(g.db) if "db" in g else None}
 
 
-from . import admin, og, pages, pair_routes, releases  # noqa: E402,F401
+from . import admin, art, og, pages, pair_routes, releases  # noqa: E402,F401
 
 
 @bp.app_template_global()

@@ -61,7 +61,8 @@
 <article class="verdict">
   {% if show_work %}
     {% if r.work.cover_url %}
-      <img class="verdict-cover" src="{{ r.work.cover_url }}" alt="" loading="lazy">
+      <img class="verdict-cover" src="{{ art_src(r.work.cover_url) }}" alt="" loading="lazy"
+           width="64" height="64" decoding="async">
     {% else %}
       <div class="verdict-cover placeholder">♪</div>
     {% endif %}

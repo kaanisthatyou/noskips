@@ -16,7 +16,7 @@
 <div class="card">
   <div class="album-head">
     {% if cover %}
-      <img class="album-art" src="{{ cover }}" alt="">
+      <img class="album-art" src="{{ art_src(cover) }}" alt="" decoding="async">
     {% else %}
       <div class="album-art" style="display:grid;place-items:center;font-size:48px">♪</div>
     {% endif %}
