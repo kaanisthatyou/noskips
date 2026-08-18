@@ -239,23 +239,35 @@ def resolve_work(session, work):
     """Resolve one work. Returns True if anything changed."""
     work.pending_resolution = False  # attempted; don't spin on it forever
     match = lookup_recording(work.display_artist, work.display_title)
-    if match is None:
+
+    # The album is looked up whether or not the recording matched, because a
+    # cover does not depend on one. Titles are where the mess lives — "Too Many
+    # Nights (feat. Don Toliver & with Future)" matches nothing — while the
+    # record it came off is usually a clean, famous name that matches first hit.
+    # Refusing the whole song its artwork because its title is untidy is giving
+    # up something we already had.
+    #
+    # It also beats anything inferred from the recording: the album is what the
+    # person was actually listening to, whereas a recording's release list is
+    # whatever MusicBrainz happens to hold, often a chart or a compilation
+    # rather than the record. The recording's own group is the fallback, and
+    # only when it passes _usable_group.
+    group = lookup_release_group(work.display_artist, work.display_album)
+    if match is None and group is None:
         session.flush()
         return False
 
-    work.mbid_recording = match["recording"]
-
-    # The album the widget saw beats anything inferred from the recording: it is
-    # what the person was actually listening to, and a recording's release list
-    # is whatever MusicBrainz happens to hold — often a chart or a compilation
-    # and not the record at all. The recording's own group is the fallback, and
-    # only when it passes _usable_group.
-    group = lookup_release_group(work.display_artist, work.display_album)
-    work.mbid_release_group = group or match["release_group"]
+    if match is not None:
+        work.mbid_recording = match["recording"]
+    work.mbid_release_group = group or (match["release_group"] if match else None)
 
     if work.mbid_release_group and not work.cover_url:
         work.cover_url = cover_url(work.mbid_release_group)
     session.flush()
+
+    if match is None:
+        # no recording, so nothing to merge on — a cover is all this pass gets
+        return True
 
     twin = session.scalar(
         select(Work).where(

@@ -417,3 +417,32 @@ def test_the_recordings_group_is_the_fallback(session, users, monkeypatch):
     stub(monkeypatch, recordings=[a_recording(group="album-rg")], groups=[])
     assert mb.resolve_work(session, work) is True
     assert work.mbid_release_group == "album-rg"
+
+
+def test_an_untidy_title_still_gets_its_cover(session, users, monkeypatch):
+    """"Too Many Nights (feat. Don Toliver & with Future)" matches no recording,
+    but it is plainly off HEROES & VILLAINS and that album has a sleeve."""
+    from server.store import upsert_rating
+
+    work = upsert_rating(
+        session, users[0], "Metro Boomin", "HEROES & VILLAINS",
+        "Too Many Nights (feat. Don Toliver & with Future)", value=8, label="8",
+    )[0].work
+
+    stub(monkeypatch, recordings=[], groups=[a_group("real-album-rg")])
+    assert mb.resolve_work(session, work) is True
+    assert work.mbid_recording is None, "the recording genuinely didn't match"
+    assert work.mbid_release_group == "real-album-rg"
+    assert "real-album-rg" in work.cover_url
+
+
+def test_neither_a_recording_nor_an_album_is_still_nothing(session, users, monkeypatch):
+    from server.store import upsert_rating
+
+    work = upsert_rating(
+        session, users[0], "Nobody", "Nothing", "Untraceable", value=5, label="5",
+    )[0].work
+    stub(monkeypatch, recordings=[], groups=[])
+    assert mb.resolve_work(session, work) is False
+    assert work.cover_url is None
+    assert work.pending_resolution is False, "attempted, so it must not spin"
