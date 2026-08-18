@@ -72,6 +72,56 @@ def _escape(value):
     return value
 
 
+# What a release group has to be before its front cover may stand in for a song.
+#
+# This exists because of "Superhero (Heroes & Villains)", whose only release in
+# MusicBrainz is *UK Official Singles Chart Top40, week of 2023-01-27* — a chart
+# roundup whose sleeve is whoever was number one that week. Metro Boomin's track
+# was therefore wearing a Taylor Swift cover. A chart, a DJ mix and a
+# various-artists compilation all have artwork that says nothing about the song
+# on it, so none of them may supply one.
+_GOOD_PRIMARY = {"Album", "EP", "Single"}
+_BAD_SECONDARY = {"Compilation", "DJ-mix", "Interview", "Audiobook", "Audio drama", "Spokenword"}
+
+
+def _usable_group(group):
+    """Is this release group's front cover honestly this song's cover?"""
+    if not group or not group.get("id"):
+        return False
+    if group.get("primary-type") not in _GOOD_PRIMARY:
+        return False
+    return not (set(group.get("secondary-types") or []) & _BAD_SECONDARY)
+
+
+def lookup_release_group(artist, album):
+    """The release group for a named album, or None.
+
+    Asked for by name because a recording's own release list often doesn't
+    contain the record it came off — MusicBrainz knows that Superhero appeared
+    on a chart compilation and, under that recording, nothing else. The album
+    is a fact the widget already gave us, and it finds the right one first hit.
+    """
+    if not artist or not album:
+        return None
+    query = f'releasegroup:"{_escape(album)}" AND artist:"{_escape(artist)}"'
+    try:
+        response = _throttled(
+            "GET", f"{MB_ROOT}/release-group",
+            params={"query": query, "fmt": "json", "limit": 5},
+        )
+        response.raise_for_status()
+        groups = response.json().get("release-groups") or []
+    except (requests.RequestException, ValueError):
+        return None
+
+    for group in groups:
+        if group.get("score", 0) < MIN_SCORE:
+            continue
+        if _usable_group(group):
+            return group["id"]
+    return None
+
+
 def lookup_recording(artist, title):
     """The best recording match, or None. Never raises."""
     if not artist or not title:
@@ -90,10 +140,11 @@ def lookup_recording(artist, title):
     for item in recordings:
         if item.get("score", 0) < MIN_SCORE:
             continue
+        # first *usable* one, not merely the first one — see _usable_group
         release_group = None
         for release in item.get("releases") or []:
             group = release.get("release-group") or {}
-            if group.get("id"):
+            if _usable_group(group):
                 release_group = group["id"]
                 break
         return {"recording": item["id"], "release_group": release_group}
@@ -193,9 +244,17 @@ def resolve_work(session, work):
         return False
 
     work.mbid_recording = match["recording"]
-    work.mbid_release_group = match["release_group"]
-    if match["release_group"] and not work.cover_url:
-        work.cover_url = cover_url(match["release_group"])
+
+    # The album the widget saw beats anything inferred from the recording: it is
+    # what the person was actually listening to, and a recording's release list
+    # is whatever MusicBrainz happens to hold — often a chart or a compilation
+    # and not the record at all. The recording's own group is the fallback, and
+    # only when it passes _usable_group.
+    group = lookup_release_group(work.display_artist, work.display_album)
+    work.mbid_release_group = group or match["release_group"]
+
+    if work.mbid_release_group and not work.cover_url:
+        work.cover_url = cover_url(work.mbid_release_group)
     session.flush()
 
     twin = session.scalar(

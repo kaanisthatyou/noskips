@@ -29,11 +29,18 @@ def no_network(monkeypatch):
     monkeypatch.setattr(mb, "_throttled", explode)
 
 
-def stub(monkeypatch, recordings=None, cover_status=307):
+def stub(monkeypatch, recordings=None, cover_status=307, groups=None):
+    """Answer the two searches separately.
+
+    They are different endpoints returning differently-shaped JSON, and since
+    resolve_work now asks both, a stub that answers everything with recordings
+    would hide which one an assertion is actually exercising.
+    """
     calls = []
 
     def fake(method, url, **kwargs):
         calls.append((method, url))
+        is_group_search = method == "GET" and url.endswith("/release-group")
 
         class Response:
             status_code = cover_status if method == "HEAD" else 200
@@ -42,6 +49,8 @@ def stub(monkeypatch, recordings=None, cover_status=307):
                 pass
 
             def json(self):
+                if is_group_search:
+                    return {"release-groups": groups or []}
                 return {"recordings": recordings or []}
 
         return Response()
@@ -50,11 +59,23 @@ def stub(monkeypatch, recordings=None, cover_status=307):
     return calls
 
 
-def a_recording(score=95, rid="rec-1", group="rg-1"):
+def a_group(gid="rg-1", primary="Album", secondary=None, score=95, title="Hot Fuss"):
+    """A release group as the search returns it. `primary` is load-bearing: a
+    front cover only speaks for the song when it is the song's own record."""
+    return {
+        "id": gid,
+        "score": score,
+        "title": title,
+        "primary-type": primary,
+        "secondary-types": secondary,
+    }
+
+
+def a_recording(score=95, rid="rec-1", group="rg-1", primary="Album", secondary=None):
     return {
         "id": rid,
         "score": score,
-        "releases": [{"release-group": {"id": group}}] if group else [],
+        "releases": [{"release-group": a_group(group, primary, secondary)}] if group else [],
     }
 
 
@@ -288,3 +309,111 @@ def test_the_drain_endpoint_runs_for_the_holder_of_the_token(client, monkeypatch
     r = client.post("/v1/internal/resolve", headers={"Authorization": "Bearer sekrit"})
 
     assert r.status_code == 200 and r.get_json()["ok"] is True
+
+
+# ------------------------------------------------- whose cover is it anyway ----
+#
+# Regression tests for a Metro Boomin track that turned up wearing a Taylor
+# Swift sleeve. "Superhero (Heroes & Villains)" has exactly one release in
+# MusicBrainz — *UK Official Singles Chart Top40*, week of 2023-01-27 — and the
+# front of a weekly chart is whoever was number one that week.
+
+
+def test_a_chart_roundup_may_not_supply_a_cover(monkeypatch):
+    """primary-type 'Other' is the chart, the bootleg and the odd artefact."""
+    stub(monkeypatch, [a_recording(group="chart-rg", primary="Other")])
+    match = mb.lookup_recording("Metro Boomin", "Superhero (Heroes & Villains)")
+    assert match["recording"] == "rec-1", "the recording itself matched fine"
+    assert match["release_group"] is None, "but its only release is a chart"
+
+
+def test_a_compilation_may_not_supply_a_cover(monkeypatch):
+    stub(monkeypatch, [a_recording(primary="Album", secondary=["Compilation"])])
+    assert mb.lookup_recording("a", "b")["release_group"] is None
+
+
+def test_a_dj_mix_may_not_supply_a_cover(monkeypatch):
+    stub(monkeypatch, [a_recording(primary="Album", secondary=["DJ-mix"])])
+    assert mb.lookup_recording("a", "b")["release_group"] is None
+
+
+def test_the_first_usable_release_wins_not_the_first_release(monkeypatch):
+    """The old code took releases[0] whatever it was. Order is MusicBrainz's,
+    and a chart can easily come first."""
+    recording = {
+        "id": "rec-1",
+        "score": 99,
+        "releases": [
+            {"release-group": a_group("chart-rg", primary="Other")},
+            {"release-group": a_group("album-rg", primary="Album")},
+        ],
+    }
+    stub(monkeypatch, [recording])
+    assert mb.lookup_recording("a", "b")["release_group"] == "album-rg"
+
+
+def test_an_album_and_an_ep_and_a_single_are_all_fine(monkeypatch):
+    for primary in ("Album", "EP", "Single"):
+        stub(monkeypatch, [a_recording(primary=primary)])
+        assert mb.lookup_recording("a", "b")["release_group"] == "rg-1", primary
+
+
+# ---------------------------------------------------- the album we were told ----
+
+
+def test_the_album_is_looked_up_by_name(monkeypatch):
+    stub(monkeypatch, groups=[a_group("real-album-rg", title="HEROES & VILLAINS")])
+    assert mb.lookup_release_group("Metro Boomin", "HEROES & VILLAINS") == "real-album-rg"
+
+
+def test_a_chart_never_wins_the_album_lookup_either(monkeypatch):
+    stub(monkeypatch, groups=[a_group("chart-rg", primary="Other"),
+                              a_group("album-rg", primary="Album")])
+    assert mb.lookup_release_group("a", "b") == "album-rg"
+
+
+def test_a_weak_album_match_is_ignored(monkeypatch):
+    stub(monkeypatch, groups=[a_group(score=40)])
+    assert mb.lookup_release_group("a", "b") is None
+
+
+def test_no_album_name_means_no_lookup(monkeypatch):
+    """A single with no album must not spend a request guessing."""
+    calls = stub(monkeypatch, groups=[a_group()])
+    assert mb.lookup_release_group("Metro Boomin", "") is None
+    assert calls == [], "nothing should have been asked"
+
+
+def test_resolving_prefers_the_album_the_widget_reported(session, users, monkeypatch):
+    """The heart of the fix: the person was listening to HEROES & VILLAINS, and
+    that beats whatever compilation the recording happens to sit on."""
+    from server.store import upsert_rating
+
+    work = upsert_rating(
+        session, users[0], "Metro Boomin", "HEROES & VILLAINS",
+        "Superhero (Heroes & Villains)", value=9, label="9",
+    )[0].work
+
+    stub(
+        monkeypatch,
+        recordings=[a_recording(rid="rec-x", group="chart-rg", primary="Other")],
+        groups=[a_group("real-album-rg", title="HEROES & VILLAINS")],
+    )
+    assert mb.resolve_work(session, work) is True
+    assert work.mbid_recording == "rec-x"
+    assert work.mbid_release_group == "real-album-rg", "not the chart"
+    assert "real-album-rg" in work.cover_url
+
+
+def test_the_recordings_group_is_the_fallback(session, users, monkeypatch):
+    """When the album can't be found by name, a usable release group from the
+    recording is still better than no cover at all."""
+    from server.store import upsert_rating
+
+    work = upsert_rating(
+        session, users[0], "The Killers", "Hot Fuss", "Mr. Brightside",
+        value=9, label="9",
+    )[0].work
+    stub(monkeypatch, recordings=[a_recording(group="album-rg")], groups=[])
+    assert mb.resolve_work(session, work) is True
+    assert work.mbid_release_group == "album-rg"
