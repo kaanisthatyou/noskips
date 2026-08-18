@@ -93,6 +93,26 @@ def _usable_group(group):
     return not (set(group.get("secondary-types") or []) & _BAD_SECONDARY)
 
 
+def _edition_variants(album):
+    """The album name, then the same name without an edition suffix.
+
+    Players report "good kid, m.A.A.d city (Deluxe)" and MusicBrainz files the
+    record as "good kid, m.A.A.d city" — the deluxe pressing is a release under
+    the same group, not a group of its own. Searching the literal string finds
+    nothing at all, so the parenthetical comes off for a second attempt.
+    """
+    album = (album or "").strip()
+    if not album:
+        return []
+    variants = [album]
+    for opener, closer in (("(", ")"), ("[", "]")):
+        if album.endswith(closer) and opener in album:
+            trimmed = album[: album.rindex(opener)].strip(" -–—")
+            if trimmed and trimmed not in variants:
+                variants.append(trimmed)
+    return variants
+
+
 def lookup_release_group(artist, album):
     """The release group for a named album, or None.
 
@@ -103,23 +123,55 @@ def lookup_release_group(artist, album):
     """
     if not artist or not album:
         return None
-    query = f'releasegroup:"{_escape(album)}" AND artist:"{_escape(artist)}"'
-    try:
-        response = _throttled(
-            "GET", f"{MB_ROOT}/release-group",
-            params={"query": query, "fmt": "json", "limit": 5},
-        )
-        response.raise_for_status()
-        groups = response.json().get("release-groups") or []
-    except (requests.RequestException, ValueError):
-        return None
+    for candidate in _edition_variants(album):
+        query = f'releasegroup:"{_escape(candidate)}" AND artist:"{_escape(artist)}"'
+        try:
+            response = _throttled(
+                "GET", f"{MB_ROOT}/release-group",
+                params={"query": query, "fmt": "json", "limit": 5},
+            )
+            response.raise_for_status()
+            groups = response.json().get("release-groups") or []
+        except (requests.RequestException, ValueError):
+            return None
 
-    for group in groups:
-        if group.get("score", 0) < MIN_SCORE:
-            continue
-        if _usable_group(group):
-            return group["id"]
+        for group in groups:
+            if group.get("score", 0) < MIN_SCORE:
+                continue
+            if _usable_group(group):
+                return group["id"]
     return None
+
+
+def album_cover(session, work):
+    """What the rest of this record already settled on, if anything.
+
+    A song on an album wears the album's cover. Resolving that per track is
+    both wasteful and wrong: seventeen tracks off *good kid, m.A.A.d city* went
+    looking one at a time and came back with five different answers, among them
+    a bootleg of a 2013 gig in Amsterdam and a 2024 concert film. Every one of
+    those is a real release the song appears on, and not one of them is the
+    record it belongs to.
+
+    So the album decides once, keyed on album_key, and every track takes it.
+
+    No flag is needed to tell an album-level cover from a track-level one: a
+    work that has an album may only ever get its cover from an album match, so
+    any cover found here is already the record's own. See resolve_work.
+    """
+    if not work.album_key:
+        return None
+    return session.scalar(
+        select(Work.mbid_release_group)
+        .where(
+            Work.album_key == work.album_key,
+            Work.id != work.id,
+            Work.merged_into.is_(None),
+            Work.mbid_release_group.is_not(None),
+            Work.cover_url.is_not(None),
+        )
+        .limit(1)
+    )
 
 
 def lookup_recording(artist, title):
@@ -240,26 +292,38 @@ def resolve_work(session, work):
     work.pending_resolution = False  # attempted; don't spin on it forever
     match = lookup_recording(work.display_artist, work.display_title)
 
-    # The album is looked up whether or not the recording matched, because a
-    # cover does not depend on one. Titles are where the mess lives — "Too Many
-    # Nights (feat. Don Toliver & with Future)" matches nothing — while the
-    # record it came off is usually a clean, famous name that matches first hit.
-    # Refusing the whole song its artwork because its title is untidy is giving
-    # up something we already had.
+    # Cover art is decided by the album, not by the track.
     #
-    # It also beats anything inferred from the recording: the album is what the
-    # person was actually listening to, whereas a recording's release list is
-    # whatever MusicBrainz happens to hold, often a chart or a compilation
-    # rather than the record. The recording's own group is the fallback, and
-    # only when it passes _usable_group.
-    group = lookup_release_group(work.display_artist, work.display_album)
+    # It does not depend on the recording matching, so it is worked out either
+    # way: titles are where the mess lives — "Too Many Nights (feat. Don
+    # Toliver & with Future)" matches nothing — while the record it came off is
+    # usually a clean, famous name that matches on the first hit.
+    #
+    # And it is asked of the album rather than the recording because a
+    # recording's release list is whatever MusicBrainz happens to hold: a
+    # chart roundup, a mixtape, a live bootleg. The album is what the person
+    # actually put on.
+    #
+    # First for free, from whatever the rest of this record already settled on.
+    group = album_cover(session, work)
+    if group is None:
+        group = lookup_release_group(work.display_artist, work.display_album)
+
+    if group is None and not (work.display_album or "").strip():
+        # A single has no album to defer to, so its own release group is the
+        # only thing there is. A track that DOES name an album never falls back
+        # to one: that is how "Money Trees" ended up wearing the sleeve of a
+        # bootleg from Amsterdam, which is a real release it appears on and is
+        # not the record anybody was listening to.
+        group = match["release_group"] if match else None
+
     if match is None and group is None:
         session.flush()
         return False
 
     if match is not None:
         work.mbid_recording = match["recording"]
-    work.mbid_release_group = group or (match["release_group"] if match else None)
+    work.mbid_release_group = group
 
     if work.mbid_release_group and not work.cover_url:
         work.cover_url = cover_url(work.mbid_release_group)

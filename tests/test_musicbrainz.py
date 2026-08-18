@@ -132,7 +132,8 @@ def test_cover_art_is_checked_not_assumed(monkeypatch):
 def test_resolving_stamps_the_mbid_and_cover(session, users, monkeypatch):
     upsert_rating(session, users[0], *SONG, value=9.0, label="9")
     work = session.scalar(select(Work))
-    stub(monkeypatch, [a_recording()])
+    # the cover comes from the album now, so the album search has to answer
+    stub(monkeypatch, [a_recording()], groups=[a_group("rg-1")])
 
     assert mb.resolve_work(session, work) is True
 
@@ -405,18 +406,35 @@ def test_resolving_prefers_the_album_the_widget_reported(session, users, monkeyp
     assert "real-album-rg" in work.cover_url
 
 
-def test_the_recordings_group_is_the_fallback(session, users, monkeypatch):
-    """When the album can't be found by name, a usable release group from the
-    recording is still better than no cover at all."""
+def test_a_track_on_an_album_never_falls_back_to_its_own_release(session, users, monkeypatch):
+    """The reason "Money Trees" wore a bootleg sleeve.
+
+    Every release the recording appears on is real, and none of them is the
+    record. If the album cannot be found, no cover is the right answer.
+    """
     from server.store import upsert_rating
 
     work = upsert_rating(
-        session, users[0], "The Killers", "Hot Fuss", "Mr. Brightside",
+        session, users[0], "Kendrick Lamar", "good kid, m.A.A.d city", "Money Trees",
         value=9, label="9",
     )[0].work
-    stub(monkeypatch, recordings=[a_recording(group="album-rg")], groups=[])
+    stub(monkeypatch, recordings=[a_recording(group="amsterdam-bootleg-rg")], groups=[])
+    mb.resolve_work(session, work)
+    assert work.mbid_recording == "rec-1", "the recording still resolves"
+    assert work.mbid_release_group is None
+    assert work.cover_url is None
+
+
+def test_a_single_may_still_use_its_own_release(session, users, monkeypatch):
+    """With no album named there is nothing to defer to."""
+    from server.store import upsert_rating
+
+    work = upsert_rating(
+        session, users[0], "The Killers", "", "Mr. Brightside", value=9, label="9",
+    )[0].work
+    stub(monkeypatch, recordings=[a_recording(group="single-rg")], groups=[])
     assert mb.resolve_work(session, work) is True
-    assert work.mbid_release_group == "album-rg"
+    assert work.mbid_release_group == "single-rg"
 
 
 def test_an_untidy_title_still_gets_its_cover(session, users, monkeypatch):
@@ -446,3 +464,115 @@ def test_neither_a_recording_nor_an_album_is_still_nothing(session, users, monke
     assert mb.resolve_work(session, work) is False
     assert work.cover_url is None
     assert work.pending_resolution is False, "attempted, so it must not spin"
+
+
+# ------------------------------------------------ one album, one cover ----
+#
+# Seventeen tracks off good kid, m.A.A.d city resolved one at a time and came
+# back with five different covers — the real record, a mixtape, a bootleg of a
+# 2013 gig in Amsterdam, a 2024 concert film and a compilation — while eleven
+# got nothing at all. Every one of those is a release the song appears on. The
+# album is the only one that is the record.
+
+
+def _album(session, user, titles, artist="Kendrick Lamar", album="good kid, m.A.A.d city"):
+    from server.store import upsert_rating
+
+    return [
+        upsert_rating(session, user, artist, album, t, value=8, label="8")[0].work
+        for t in titles
+    ]
+
+
+def test_the_second_track_takes_the_covers_the_first_one_found(session, users, monkeypatch):
+    one, two = _album(session, users[0], ["Money Trees", "Poetic Justice"])
+
+    calls = stub(monkeypatch, recordings=[a_recording()], groups=[a_group("gkmc-rg")])
+    mb.resolve_work(session, one)
+    asked_for_one = len([c for c in calls if c[1].endswith("/release-group")])
+
+    calls.clear()
+    mb.resolve_work(session, two)
+    asked_for_two = len([c for c in calls if c[1].endswith("/release-group")])
+
+    assert one.mbid_release_group == two.mbid_release_group == "gkmc-rg"
+    assert one.cover_url == two.cover_url
+    assert asked_for_one == 1
+    assert asked_for_two == 0, "the album already decided; asking again is waste"
+
+
+def test_a_whole_record_ends_up_wearing_one_sleeve(session, users, monkeypatch):
+    works = _album(session, users[0], [
+        "Sherane a.k.a Master Splinter's Daughter", "Money Trees", "Poetic Justice",
+        "good kid", "m.A.A.d city", "Swimming Pools (Drank)", "Compton",
+    ])
+    # every track's own recording points somewhere different and plausible
+    stub(monkeypatch, recordings=[a_recording(group="a-bootleg-rg")],
+         groups=[a_group("gkmc-rg")])
+    for w in works:
+        mb.resolve_work(session, w)
+
+    groups = {w.mbid_release_group for w in works}
+    assert groups == {"gkmc-rg"}, f"one record, one cover — got {groups}"
+    assert len({w.cover_url for w in works}) == 1
+
+
+def test_a_different_album_is_not_borrowed_from(session, users, monkeypatch):
+    gkmc = _album(session, users[0], ["Money Trees"])[0]
+    damn = _album(session, users[0], ["HUMBLE."], album="DAMN.")[0]
+
+    stub(monkeypatch, recordings=[a_recording()], groups=[a_group("gkmc-rg")])
+    mb.resolve_work(session, gkmc)
+    stub(monkeypatch, recordings=[a_recording()], groups=[a_group("damn-rg")])
+    mb.resolve_work(session, damn)
+
+    assert gkmc.mbid_release_group == "gkmc-rg"
+    assert damn.mbid_release_group == "damn-rg"
+
+
+# ----------------------------------------------------- edition suffixes ----
+
+
+def test_a_deluxe_edition_finds_the_plain_record():
+    assert mb._edition_variants("good kid, m.A.A.d city (Deluxe)") == [
+        "good kid, m.A.A.d city (Deluxe)",
+        "good kid, m.A.A.d city",
+    ]
+
+
+def test_brackets_come_off_too():
+    assert mb._edition_variants("Album [Explicit]")[-1] == "Album"
+
+
+def test_a_plain_name_is_tried_once():
+    assert mb._edition_variants("DAMN.") == ["DAMN."]
+
+
+def test_a_name_that_is_only_a_parenthetical_is_left_alone():
+    assert mb._edition_variants("(Deluxe)") == ["(Deluxe)"]
+
+
+def test_the_deluxe_retry_actually_runs(monkeypatch):
+    """First query finds nothing, the trimmed one finds the record."""
+    seen = []
+
+    def fake(method, url, **kwargs):
+        seen.append(kwargs.get("params", {}).get("query", ""))
+
+        class Response:
+            status_code = 200
+
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                if "Deluxe" in seen[-1]:
+                    return {"release-groups": []}
+                return {"release-groups": [a_group("gkmc-rg")]}
+
+        return Response()
+
+    monkeypatch.setattr(mb, "_throttled", fake)
+    got = mb.lookup_release_group("Kendrick Lamar", "good kid, m.A.A.d city (Deluxe)")
+    assert got == "gkmc-rg"
+    assert len(seen) == 2, "one attempt with the suffix, one without"
