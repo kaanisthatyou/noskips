@@ -1,4 +1,4 @@
-/* ============ noskips frontend ============ */
+/* ============ rateify frontend ============ */
 
 const $ = (id) => document.getElementById(id);
 
@@ -249,9 +249,9 @@ const I18N = {
 };
 
 function pref(name, fallback) {
-  return localStorage.getItem(`noskips_${name}`) ?? fallback;
+  return localStorage.getItem(`rateify_${name}`) ?? fallback;
 }
-const setPref = (name, value) => localStorage.setItem(`noskips_${name}`, value);
+const setPref = (name, value) => localStorage.setItem(`rateify_${name}`, value);
 
 let lang = pref("lang", "en");
 

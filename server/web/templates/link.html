@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
-{% block title %}link a device — noskips{% endblock %}
+{% block title %}link a device — rateify{% endblock %}
 {% block body %}
 <div class="card narrow stack">
   {% if error %}
     <h2>that didn't work</h2>
     <p>{{ error }}</p>
-    <p class="muted">open noskips on your computer and try again — codes only
+    <p class="muted">open rateify on your computer and try again — codes only
       last ten minutes.</p>
 
   {% elif not me %}
     <h2>sign in to link this device</h2>
     <div class="code">{{ pretty_code }}</div>
-    <p class="muted">you're about to connect a copy of noskips running on
+    <p class="muted">you're about to connect a copy of rateify running on
       <strong>{{ pairing.device_name or "a windows pc" }}</strong> to your account.</p>
     <div class="tear"></div>
     <div class="oauth-row">
@@ -35,10 +35,10 @@
     <h2>link this device?</h2>
     <div class="code">{{ pretty_code }}</div>
     <p>connect <strong>{{ pairing.device_name or "a windows pc" }}</strong>
-      {% if pairing.app_version %}(noskips {{ pairing.app_version }}){% endif %}
+      {% if pairing.app_version %}(rateify {{ pairing.app_version }}){% endif %}
       to <strong>{{ me.handle and "@" ~ me.handle or "your account" }}</strong>?</p>
 
-    <p class="warn">only continue if you <em>just</em> opened noskips on that
+    <p class="warn">only continue if you <em>just</em> opened rateify on that
       computer yourself. if somebody sent you this link or read you this code,
       close this page — it would connect their copy to your account.</p>
 

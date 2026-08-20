@@ -322,7 +322,7 @@ def test_the_download_page_says_windows_only_up_front(client):
     body = client.get("/download").data.decode()
 
     assert "Windows 10/11 only" in body
-    assert "noskips-Setup-" in body
+    assert "rateify-Setup-" in body
 
 
 def test_the_privacy_page_says_what_never_leaves_the_machine(client):
@@ -432,7 +432,7 @@ def test_a_private_note_stays_off_the_public_list(client, app):
         # a driver chosen on purpose is left alone
         ("postgresql+psycopg2://u:p@h/db", "postgresql+psycopg2://u:p@h/db"),
         ("postgresql+psycopg://u:p@h/db", "postgresql+psycopg://u:p@h/db"),
-        ("sqlite:///noskips-dev.db", "sqlite:///noskips-dev.db"),
+        ("sqlite:///rateify-dev.db", "sqlite:///rateify-dev.db"),
     ],
 )
 def test_a_pasted_connection_string_is_made_connectable(given, expected):
@@ -449,7 +449,7 @@ def test_the_migrations_connect_the_same_way_the_app_does():
     so env.py shares the whole helper rather than repeating any of it.
 
     It used to share only ``normalize_database_url`` and keep its own copy of
-    the ``sqlite:///noskips-dev.db`` fallback — which meant the blank-means-unset
+    the ``sqlite:///rateify-dev.db`` fallback — which meant the blank-means-unset
     fix had to be made in two places, and one of them would have been missed.
     """
     from pathlib import Path

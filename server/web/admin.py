@@ -14,6 +14,7 @@ import os
 from flask import abort, current_app, g, jsonify, redirect, render_template, request
 from sqlalchemy import select
 
+from ..envcompat import env
 from ..models import Rating, Report, User, utcnow
 from ..security import ApiError, as_uuid, current_user
 from . import bp
@@ -31,9 +32,10 @@ def require_admin():
 
 
 def read_only():
-    """The kill switch. Set NOSKIPS_READ_ONLY=1 and every write stops while
-    everything stays readable."""
-    return os.environ.get("NOSKIPS_READ_ONLY", "").strip() not in ("", "0", "false")
+    """The kill switch. Set RATEIFY_READ_ONLY=1 and every write stops while
+    everything stays readable. The old NOSKIPS_READ_ONLY still works, so a
+    deployment that was frozen before the rename stays frozen after it."""
+    return (env("READ_ONLY") or "") not in ("", "0", "false")
 
 
 @bp.get("/admin")

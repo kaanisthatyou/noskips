@@ -1,4 +1,4 @@
-# Releasing noskips
+# Releasing rateify
 
 ## Build the artifacts
 
@@ -7,8 +7,8 @@ powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 ```
 
 Produces in `release/`:
-- `noskips-Setup-<version>.exe` — per-user installer (no admin needed)
-- `noskips-<version>-portable.zip` — unzip-and-run
+- `rateify-Setup-<version>.exe` — per-user installer (no admin needed)
+- `rateify-<version>-portable.zip` — unzip-and-run
 
 Bump the version in **three places** first: `__version__` in `app.py`,
 `MyAppVersion` in `installer.iss`, and `VERSION` (plus the two byte counts) in
@@ -23,7 +23,7 @@ both lazily and degrades to "not available" without them, so they can be left
 out entirely:
 
 ```
-$env:NOSKIPS_NO_AUDIO = "1"
+$env:RATEIFY_NO_AUDIO = "1"
 powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 ```
 
@@ -39,7 +39,7 @@ earlier version of this flag looked like it worked and shipped numpy anyway.
 ```
 git tag v2.0.0
 git push origin main --tags
-gh release create v2.0.0 release/noskips-Setup-2.0.0.exe release/noskips-2.0.0-portable.zip
+gh release create v2.0.0 release/rateify-Setup-2.0.0.exe release/rateify-2.0.0-portable.zip
 ```
 
 Or on the website: *Releases → Draft a new release → choose the tag → attach

@@ -20,7 +20,7 @@ code ("paste this to fix your sync"). The code is useless without the nonce, so
 the attacker cannot collect the token — but the victim could still approve a
 device that isn't theirs. Defences: a ten-minute TTL, rate limiting on claim,
 and a confirmation page that names the device and says plainly to continue only
-if they *just* opened noskips themselves.
+if they *just* opened rateify themselves.
 """
 
 import hashlib

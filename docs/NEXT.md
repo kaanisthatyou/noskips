@@ -1,6 +1,6 @@
 # What's left
 
-Handoff note. Branch `noskips-social`, 297 tests green, nothing pushed. Phases
+Handoff note. Branch `rateify-social`, 297 tests green, nothing pushed. Phases
 0–5 are built and verified — including the website, which was previously
 planned-only. What remains is almost entirely **credentials and your machine**:
 the code no longer has a hole in it that I can close without your accounts.
@@ -29,32 +29,35 @@ Still to set: `ADMIN_HANDLES=kaan`, `RESOLVER_TOKEN`, `MUSICBRAINZ_CONTACT`,
 The Marketplace integration provisions `DATABASE_URL` **sensitive**, meaning
 Vercel will not show it back to you — not in `vercel env pull`, not in the
 dashboard. To migrate again, read the string from the Neon console (Vercel →
-Storage → noskips → Open in Neon), then:
+Storage → rateify → Open in Neon), then:
 
 ```
 DATABASE_URL=<neon pooled url> python -m alembic upgrade head
 ```
 
 **Two GitHub repo secrets** for the cron (`.github/workflows/resolve.yml`):
-`NOSKIPS_URL` and `RESOLVER_TOKEN`. Without them the resolver never runs, so
+`RATEIFY_URL` and `RESOLVER_TOKEN`. Without them the resolver never runs, so
 cover art stays blank, duplicate spellings never merge, and — since the same
 tick now does the housekeeping — spent rate-limit rows never get pruned.
 
 **The one that would have bitten you — settled.** The widget's fallback pointed
-at `https://noskips.vercel.app`, which was already taken by somebody else. The
-deploy lives at `https://noskips-navy.vercel.app` and `sync.py` now ships that:
+at a bare `*.vercel.app` name that was already taken by somebody else. The
+deploy lives at `https://noskips-navy.vercel.app` and `sync.py` now ships that.
+That hostname keeps the pre-rename project name on purpose: renaming the Vercel
+project rewrites the URL, and the Google and Discord OAuth redirect URIs point
+at it, so sign-in breaks until both consoles are updated to match.
 
 ```python
-DEFAULT_SERVER = os.environ.get("NOSKIPS_SERVER", "https://noskips-navy.vercel.app")
+DEFAULT_SERVER = os.environ.get("RATEIFY_SERVER", "https://noskips-navy.vercel.app")
 ```
 
-`NOSKIPS_SERVER` still overrides it, but only on a machine where somebody sets
+`RATEIFY_SERVER` still overrides it, but only on a machine where somebody sets
 it — and nobody who downloads the exe will. **When a real domain is bought,
 change that literal before building the release**, not after: ship it stale and
 every download pairs against nothing, silently, and the only fix is a new
 release.
 
-**`GITHUB_REPO` is fine as it is.** It defaults to `kaanisthatyou/noskips` and
+**`GITHUB_REPO` is fine as it is.** It defaults to `kaanisthatyou/rateify` and
 the repo now really is called that, so the download buttons resolve.
 
 ---
@@ -132,13 +135,13 @@ fallback in `media_kind.py` can be tightened.
    page's ticker stays hidden below 25 verdicts — which is the honest signal,
    not a bug to work around. Pair your widget and your 11 albums (143 tracks)
    backfill automatically, then keep rating.
-2. **Staff the moderation queue.** `/admin` and the `NOSKIPS_READ_ONLY` kill
+2. **Staff the moderation queue.** `/admin` and the `RATEIFY_READ_ONLY` kill
    switch both work, but only if `ADMIN_HANDLES` is set on the deploy.
 3. **The three screenshots the landing page wants.** `static/shots/README.md`
    lists exactly what each one should show; the page removes any `<img>` whose
    file is missing, so it degrades quietly rather than breaking — but the hero
    is a wall of text without them, and the trace GIF is the one that travels.
-4. **Trademark check** on "noskips" — I searched apps, domains and handles and
+4. **Trademark check** on "rateify" — I searched apps, domains and handles and
    found it clear, but I did not check USPTO/EUIPO. Ten minutes, worth it
    before it goes on anything permanent.
 5. ~~Re-shoot the README screenshots.~~ Done — both now show the real widget.
@@ -147,11 +150,11 @@ fallback in `media_kind.py` can be tightened.
 
 ## 5. Housekeeping
 
-- ~~Push the branch.~~ Done — `noskips-social` and `main` both track origin.
-- ~~Rename the GitHub repo.~~ Done — it is `kaanisthatyou/noskips`, which is
+- ~~Push the branch.~~ Done — `rateify-social` and `main` both track origin.
+- ~~Rename the GitHub repo.~~ Done — it is `kaanisthatyou/rateify`, which is
   what `GITHUB_REPO` already defaults to, so nothing needs setting.
-- **Installer vs your library.** `noskips-Setup-2.0.0.exe` installs to
-  `%LOCALAPPDATA%\Programs\noskips` and starts with an **empty shelf** — the
+- **Installer vs your library.** `rateify-Setup-2.0.0.exe` installs to
+  `%LOCALAPPDATA%\Programs\rateify` and starts with an **empty shelf** — the
   library that matters lives next to the exe in the repo root. Copy
   `data\ratings.json` (and `covers\`) across by hand, or keep running the exe
   from the repo root. Note both builds bind port 7700, so whichever starts

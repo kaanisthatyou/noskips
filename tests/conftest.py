@@ -16,8 +16,8 @@ def never_touch_the_real_library(tmp_path_factory):
     this makes it impossible to happen twice.
     """
     root = tmp_path_factory.mktemp("widget-data")
-    os.environ.setdefault("NOSKIPS_DATA_DIR", str(root / "data"))
-    os.environ.setdefault("NOSKIPS_COVERS_DIR", str(root / "covers"))
+    os.environ.setdefault("RATEIFY_DATA_DIR", str(root / "data"))
+    os.environ.setdefault("RATEIFY_COVERS_DIR", str(root / "covers"))
     yield
 
 from server import db as database

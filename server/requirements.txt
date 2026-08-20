@@ -1,4 +1,4 @@
-# noskips server — deployed separately from the widget, which keeps its own
+# rateify server — deployed separately from the widget, which keeps its own
 # (deliberately tiny) requirements.txt at the repo root.
 flask>=3.0
 sqlalchemy>=2.0

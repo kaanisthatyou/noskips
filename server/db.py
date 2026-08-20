@@ -38,7 +38,7 @@ def normalize_database_url(url):
     return url
 
 
-DEFAULT_DATABASE_URL = "sqlite:///noskips-dev.db"
+DEFAULT_DATABASE_URL = "sqlite:///rateify-dev.db"
 
 
 def database_url():

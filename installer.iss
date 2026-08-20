@@ -1,7 +1,7 @@
-; Inno Setup script for noskips — compile with ISCC.exe installer.iss
-#define MyAppName "noskips"
+; Inno Setup script for rateify — compile with ISCC.exe installer.iss
+#define MyAppName "rateify"
 #define MyAppVersion "2.1.0"
-#define MyAppExeName "noskips.exe"
+#define MyAppExeName "rateify.exe"
 
 [Setup]
 ; The AppId is what Windows upgrades in place — never change it between
@@ -15,8 +15,8 @@ DisableProgramGroupPage=yes
 ; per-user install: no admin prompt, and the app can write its library next to itself
 PrivilegesRequired=lowest
 OutputDir=release
-OutputBaseFilename=noskips-Setup-{#MyAppVersion}
-SetupIconFile=noskips.ico
+OutputBaseFilename=rateify-Setup-{#MyAppVersion}
+SetupIconFile=rateify.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern

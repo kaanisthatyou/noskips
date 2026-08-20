@@ -16,7 +16,7 @@ build/
 dist/
 release/
 installer.iss
-noskips.spec
+rateify.spec
 scripts/
 assets/
 

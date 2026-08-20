@@ -161,7 +161,7 @@ def test_the_album_page_disappears_again_when_the_last_verdict_goes(client):
     assert client.get(f"/album/{key}").status_code == 404
 
 
-def test_certified_noskips_needs_more_than_one_great_track(client):
+def test_certified_rateify_needs_more_than_one_great_track(client):
     signup(client)
     rate(client, 10.0)
     body = client.get(f"/album/{album_key_of(client)}").data.decode()

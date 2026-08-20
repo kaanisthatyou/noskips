@@ -27,7 +27,7 @@ RESERVED = {
     "about", "account", "admin", "album", "albums", "api", "auth", "blog",
     "contact", "cosign", "dashboard", "delete", "discord", "download", "explore",
     "export", "feed", "follow", "following", "followers", "help", "home", "link",
-    "login", "logout", "me", "moderation", "new", "noskips", "notifications",
+    "login", "logout", "me", "moderation", "new", "rateify", "notifications",
     "oauth", "press", "privacy", "profile", "register", "reset", "root",
     "search", "settings", "signin", "signup", "static", "status", "support",
     "terms", "track", "tracks", "u", "user", "users", "verify", "welcome", "www",

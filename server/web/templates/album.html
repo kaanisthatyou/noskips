@@ -3,9 +3,9 @@
 {# a track stamped with no record — a single, or somebody leaving the field
    blank on /stamp — still needs a name on its page #}
 {% set shown = title or "singles" %}
-{% block title %}{{ shown }} — {{ artist }} — noskips{% endblock %}
+{% block title %}{{ shown }} — {{ artist }} — rateify{% endblock %}
 {% block og_title %}{{ shown }} by {{ artist }}{% endblock %}
-{% block og_desc %}average {{ average|score }} across {{ works|length }} rated tracks on noskips{% endblock %}
+{% block og_desc %}average {{ average|score }} across {{ works|length }} rated tracks on rateify{% endblock %}
 {% block og_extra %}
   {%- if og_image("/og/album/" ~ works[0].album_key ~ ".png") %}
     <meta property="og:image" content="{{ og_image('/og/album/' ~ works[0].album_key ~ '.png') }}">

@@ -15,7 +15,7 @@ winrt-Windows.Foundation.Collections>=3.0; sys_platform == "win32"
 
 # Listening to the speakers, for the visualiser and the trace. Genuinely
 # optional: audio.py imports them lazily and reports "not available" if they're
-# missing, so the widget runs fine without them. Build with NOSKIPS_NO_AUDIO=1
+# missing, so the widget runs fine without them. Build with RATEIFY_NO_AUDIO=1
 # to leave them out of the exe (measured: 19.5MB instead of 29.3MB).
 numpy>=1.26; sys_platform == "win32"
 pyaudiowpatch>=0.2.12; sys_platform == "win32"

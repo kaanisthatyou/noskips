@@ -24,7 +24,7 @@ datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 #
 # Measured on 2.0.0: 29.3MB with audio, 19.5MB without.
 audio_excludes = []
-if os.environ.get('NOSKIPS_NO_AUDIO'):
+if os.environ.get('RATEIFY_NO_AUDIO') or os.environ.get('NOSKIPS_NO_AUDIO'):
     audio_excludes = ['numpy', 'pyaudiowpatch']
 else:
     hiddenimports += ['pyaudiowpatch', 'numpy']
@@ -58,7 +58,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='noskips',
+    name='rateify',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -71,5 +71,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['noskips.ico'],
+    icon=['rateify.ico'],
 )

@@ -1,4 +1,4 @@
-"""noskips — tiny local widget that shows what Spotify is playing and lets you rate it.
+"""rateify — tiny local widget that shows what Spotify is playing and lets you rate it.
 
 Reads Windows' media session (SMTC), so no Spotify API keys are needed.
 Run:  python app.py   → opens http://127.0.0.1:7700
@@ -21,6 +21,7 @@ from flask import Flask, jsonify, request, send_from_directory
 
 import media_kind
 from audio import Listen, Visualizer, procedural_bands
+from server.envcompat import env
 from sync import SyncEngine
 
 from winrt.windows.media.control import (
@@ -33,12 +34,14 @@ from winrt.windows.storage.streams import Buffer, InputStreamOptions
 FROZEN = getattr(sys, "frozen", False)
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
 ROOT = Path(sys.executable).parent if FROZEN else Path(__file__).parent
-# NOSKIPS_DATA_DIR relocates the library. Mostly this exists so the tests can
+# RATEIFY_DATA_DIR relocates the library. Mostly this exists so the tests can
 # run against a throwaway folder instead of the real one — without it there is
 # no way to import this module without pointing it at whoever's library happens
 # to be next to the source, which is exactly the accident it was added after.
-DATA_DIR = Path(os.environ.get("NOSKIPS_DATA_DIR") or (ROOT / "data"))
-COVERS_DIR = Path(os.environ.get("NOSKIPS_COVERS_DIR") or (ROOT / "covers"))
+# env() also honours the old NOSKIPS_* spelling: an install that moved its
+# library under the old name must not come back up pointed at an empty folder.
+DATA_DIR = Path(env("DATA_DIR") or (ROOT / "data"))
+COVERS_DIR = Path(env("COVERS_DIR") or (ROOT / "covers"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 COVERS_DIR.mkdir(parents=True, exist_ok=True)
 RATINGS_FILE = DATA_DIR / "ratings.json"
@@ -634,7 +637,7 @@ def _round_corners():
     try:
         import ctypes
 
-        hwnd = ctypes.windll.user32.FindWindowW(None, "noskips")
+        hwnd = ctypes.windll.user32.FindWindowW(None, "rateify")
         if not hwnd:
             return
         pref = ctypes.c_int(_DWMWCP_ROUNDSMALL)
@@ -653,7 +656,7 @@ def _run_widget(lock_socket):
 
     threading.Thread(target=_run_flask, args=(lock_socket,), daemon=True).start()
     window = webview.create_window(
-        "noskips",
+        "rateify",
         f"http://127.0.0.1:{PORT}",
         width=420,
         height=560,
@@ -689,7 +692,7 @@ def _run_widget(lock_socket):
 if __name__ == "__main__":
     lock_socket = _acquire_singleton()
     if lock_socket is None:
-        # another noskips already holds the port — just bring up its page
+        # another rateify already holds the port — just bring up its page
         webbrowser.open(f"http://127.0.0.1:{PORT}")
         sys.exit(0)
     threading.Thread(target=_worker, daemon=True).start()
@@ -698,5 +701,5 @@ if __name__ == "__main__":
     except Exception:
         # no WebView2 runtime? fall back to the browser like the old days
         threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{PORT}")).start()
-        print(f"noskips spinning at http://127.0.0.1:{PORT}")
+        print(f"rateify spinning at http://127.0.0.1:{PORT}")
         _run_flask(lock_socket)

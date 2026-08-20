@@ -1,4 +1,4 @@
-/* ============ noskips on the web ============
+/* ============ rateify on the web ============
  *
  * Deliberately small and dependency-free. The pages themselves are rendered
  * server-side and work without this file; everything here is the interactive

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}noskips{% endblock %}</title>
+<title>{% block title %}rateify{% endblock %}</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♪</text></svg>">
 <link rel="stylesheet" href="/static/zine.css">
-<meta property="og:site_name" content="noskips">
-<meta property="og:title" content="{% block og_title %}noskips{% endblock %}">
+<meta property="og:site_name" content="rateify">
+<meta property="og:title" content="{% block og_title %}rateify{% endblock %}">
 <meta property="og:description" content="{% block og_desc %}judge every song. keep receipts.{% endblock %}">
 <meta name="twitter:card" content="summary_large_image">
 {% block og_extra %}{% endblock %}
@@ -17,13 +17,13 @@
 <div class="wrap">
 
   <header class="topbar">
-    <a class="wordmark" href="/">noskips ♪</a>
+    <a class="wordmark" href="/">rateify ♪</a>
 
     {# the search box lives in the chrome on purpose: a shared index you can't
        search is a filing cabinet with no handle #}
     <form class="searchbox" action="/search" method="get" role="search">
       <input name="q" type="search" placeholder="find a song, a record, a person"
-             value="{{ q or '' }}" aria-label="search noskips">
+             value="{{ q or '' }}" aria-label="search rateify">
     </form>
 
     {# download and github sit in the chrome, not only the footer: a reader who

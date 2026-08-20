@@ -56,8 +56,8 @@ with the version; docs/RELEASING.md names all three places. The section is also
 its own page at `/download`, because a signed-in reader is redirected off `/`
 to their shelf and would otherwise have no route to the exe.
 
-- `noskips-Setup-x.y.z.exe` — per-user installer, no admin
-- `noskips-x.y.z-portable.zip` — unzip and run
+- `rateify-Setup-x.y.z.exe` — per-user installer, no admin
+- `rateify-x.y.z-portable.zip` — unzip and run
 
 With the honest line right there rather than in a FAQ: **Windows 10/11 only,
 because it reads the Windows media session. The web works everywhere.** Getting
@@ -141,6 +141,6 @@ Two things that should land before anyone is invited — neither is code:
 1. **Seed the index.** An empty social product looks dead. Rate a few hundred
    tracks yourself first — you already have 11 albums locally, and pairing
    backfills them automatically.
-2. **Have the moderation queue staffed.** `/admin` and the `NOSKIPS_READ_ONLY`
+2. **Have the moderation queue staffed.** `/admin` and the `RATEIFY_READ_ONLY`
    kill switch both exist, but they only work if `ADMIN_HANDLES` is set on the
    deploy and you actually look at the queue.

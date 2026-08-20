@@ -1,4 +1,4 @@
-# The noskips server
+# The rateify server
 
 The widget is offline-first and works forever with none of this running. The
 server is what it talks to *when you ask it to*: accounts, handles, profiles,
@@ -87,7 +87,7 @@ Everything here is $0:
 
 ### Neon, step by step
 
-1. **neon.tech** → sign in with GitHub → **Create project**. Name it `noskips`,
+1. **neon.tech** → sign in with GitHub → **Create project**. Name it `rateify`,
    pick the region nearest your Vercel region, leave the Postgres version at the
    default. The free tier needs no card.
 2. On the project dashboard, **Connection string**. Two things to get right:
@@ -163,7 +163,7 @@ without them becomes someone else's problem within a week.
 - Actions are dismiss, hide the verdict (it stays theirs, it just leaves every
   public surface), and ban. An admin can't be banned through the queue —
   otherwise one retaliatory report is a self-inflicted lockout.
-- `NOSKIPS_READ_ONLY=1` is the kill switch: every write stops, everything stays
+- `RATEIFY_READ_ONLY=1` is the kill switch: every write stops, everything stays
   readable. The thing you want at 2am when you'd rather freeze the site than
   take it down.
 
@@ -197,7 +197,7 @@ Three rules, in order of how badly they'd hurt to get wrong:
 Because Vercel Hobby only fires cron once a day, the schedule lives in
 `.github/workflows/resolve.yml` and runs every fifteen minutes (also free). It
 POSTs to `/v1/internal/resolve` with `RESOLVER_TOKEN`; set that as both a
-Vercel env var and a repo secret, along with `NOSKIPS_URL`.
+Vercel env var and a repo secret, along with `RATEIFY_URL`.
 
 Cover art is *linked* from the Cover Art Archive, never copied — and checked
 with a HEAD first, so a missing cover is a clean placeholder rather than a

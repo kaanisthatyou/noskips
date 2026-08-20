@@ -24,7 +24,7 @@ _AVATAR_INKS = [
 
 @bp.app_template_global()
 def avatar_style(seed, size=74):
-    digest = hashlib.md5((seed or "noskips").encode("utf-8")).hexdigest()
+    digest = hashlib.md5((seed or "rateify").encode("utf-8")).hexdigest()
     picks = [_AVATAR_INKS[int(digest[i : i + 2], 16) % len(_AVATAR_INKS)] for i in (0, 2, 4)]
     angle = int(digest[6:8], 16)
     return (

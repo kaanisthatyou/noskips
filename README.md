@@ -1,4 +1,4 @@
-# noskips ♪
+# rateify ♪
 
 *judge every song. keep receipts.*
 
@@ -27,7 +27,7 @@ verdict on every song — typewriter, handwriting, washi tape and all.
   album average (plain mean of its rated tracks).
 - **Honest storage** — one human-readable `data/ratings.json`, covers cached
   as plain images in `covers/`. Grep it, back it up, take it with you. Set
-  `NOSKIPS_DATA_DIR` if you'd rather keep the library somewhere else.
+  `RATEIFY_DATA_DIR` if you'd rather keep the library somewhere else.
 - **Songs and videos, filed separately** — Windows says whether what's playing
   is music or a video, so a YouTube clip gets rated exactly like a song but
   lands in `data/videos.json` and its own shelf. Videos never leave your
@@ -78,9 +78,9 @@ See [docs/SERVER.md](docs/SERVER.md) to run the server and
 
 Grab the latest [release](../../releases):
 
-- **`noskips-Setup-x.y.z.exe`** — per-user installer, no admin needed, adds a
+- **`rateify-Setup-x.y.z.exe`** — per-user installer, no admin needed, adds a
   start-menu (and optionally desktop) shortcut.
-- **`noskips-x.y.z-portable.zip`** — unzip anywhere and run `noskips.exe`.
+- **`rateify-x.y.z-portable.zip`** — unzip anywhere and run `rateify.exe`.
 
 Your library lives in `data/` next to the exe and survives updates and
 uninstalls. If WebView2 is somehow missing, it falls back to opening the UI

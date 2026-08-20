@@ -19,13 +19,13 @@ VERSION = "2.1.0"
 ARTIFACTS = [
     {
         "kind": "installer",
-        "name": f"noskips-Setup-{VERSION}.exe",
+        "name": f"rateify-Setup-{VERSION}.exe",
         "bytes": 33_822_667,
         "blurb": "per-user installer, no admin needed",
     },
     {
         "kind": "portable",
-        "name": f"noskips-{VERSION}-portable.zip",
+        "name": f"rateify-{VERSION}-portable.zip",
         "bytes": 31_460_297,
         "blurb": "unzip and run, nothing written outside the folder",
     },
@@ -35,7 +35,7 @@ ARTIFACTS = [
 # rather than quietly 404 — see docs/NEXT.md.
 # `or`, not a get default: a copied .env sets GITHUB_REPO="" and every download
 # button and the footer link would point at github.com// — see server/db.py.
-REPO = os.environ.get("GITHUB_REPO") or "kaanisthatyou/noskips"
+REPO = os.environ.get("GITHUB_REPO") or "kaanisthatyou/rateify"
 
 
 def _mb(size):

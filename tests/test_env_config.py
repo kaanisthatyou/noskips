@@ -12,13 +12,14 @@ creeping back in fails here rather than on somebody's first afternoon.
 """
 
 import importlib
+import sys
 
 import pytest
 
 from server import db as database
-from server import emailer, musicbrainz
+from server import emailer, envcompat, musicbrainz
 from server.factory import create_app
-from server.web import pages, releases
+from server.web import admin, pages, releases
 
 
 def test_blank_database_url_falls_back_to_sqlite(monkeypatch):
@@ -51,7 +52,7 @@ def test_blank_base_url_keeps_a_usable_origin(monkeypatch):
 
 
 def test_https_base_url_still_marks_the_cookie_secure(monkeypatch):
-    monkeypatch.setenv("BASE_URL", "https://noskips.example")
+    monkeypatch.setenv("BASE_URL", "https://rateify.example")
     assert create_app().config["SESSION_COOKIE_SECURE"] is True
 
 
@@ -60,7 +61,7 @@ def test_blank_github_repo_does_not_produce_a_double_slash(monkeypatch):
     monkeypatch.setenv("GITHUB_REPO", "")
     reloaded = importlib.reload(releases)
     try:
-        assert reloaded.REPO == "kaanisthatyou/noskips"
+        assert reloaded.REPO == "kaanisthatyou/rateify"
         assert "//releases" not in reloaded.latest()["artifacts"][0]["url"]
     finally:
         monkeypatch.delenv("GITHUB_REPO", raising=False)
@@ -103,3 +104,62 @@ def test_blank_smtp_settings_keep_their_defaults(monkeypatch, blank):
     assert sender.port == 587
     # EMAIL_FROM unset falls through to the account actually sending the mail
     assert sender.sender == "someone@example.com"
+
+
+# --- the rename: RATEIFY_* now, NOSKIPS_* still honoured -------------------
+#
+# The widget shipped as noskips for its whole life and the README told people
+# to set NOSKIPS_DATA_DIR to move their library. If the rename made the app
+# read only the new spelling, every one of those installs would come back up
+# pointing at an empty folder next to the exe — indistinguishable, from the
+# user's side, from every rating they ever made being deleted. These pin the
+# fallback so removing it has to be a decision rather than a tidy-up.
+
+
+def test_new_name_wins_over_the_old_one(monkeypatch):
+    monkeypatch.setenv("RATEIFY_SERVER", "https://new.example")
+    monkeypatch.setenv("NOSKIPS_SERVER", "https://old.example")
+    assert envcompat.env("SERVER") == "https://new.example"
+
+
+def test_old_name_still_read_when_the_new_one_is_absent(monkeypatch):
+    monkeypatch.delenv("RATEIFY_SERVER", raising=False)
+    monkeypatch.setenv("NOSKIPS_SERVER", "https://old.example")
+    assert envcompat.env("SERVER") == "https://old.example"
+
+
+def test_blank_new_name_falls_through_to_the_old_one(monkeypatch):
+    """.env.example ships every key present and empty, so blank means unset —
+    otherwise copying the new .env would shadow a working old setting."""
+    monkeypatch.setenv("RATEIFY_SERVER", "")
+    monkeypatch.setenv("NOSKIPS_SERVER", "https://old.example")
+    assert envcompat.env("SERVER") == "https://old.example"
+
+
+def test_neither_set_returns_the_default(monkeypatch):
+    monkeypatch.delenv("RATEIFY_SERVER", raising=False)
+    monkeypatch.delenv("NOSKIPS_SERVER", raising=False)
+    assert envcompat.env("SERVER", "fallback") == "fallback"
+
+
+def test_a_deployment_frozen_before_the_rename_stays_frozen(monkeypatch):
+    """The kill switch is the one where failing open is worst."""
+    monkeypatch.delenv("RATEIFY_READ_ONLY", raising=False)
+    monkeypatch.setenv("NOSKIPS_READ_ONLY", "1")
+    assert admin.read_only() is True
+
+
+def test_a_library_moved_under_the_old_name_is_still_found(monkeypatch, tmp_path):
+    """The data-loss one: NOSKIPS_DATA_DIR must still point the widget home."""
+    moved = tmp_path / "somewhere-else"
+    monkeypatch.delenv("RATEIFY_DATA_DIR", raising=False)
+    monkeypatch.delenv("RATEIFY_COVERS_DIR", raising=False)
+    monkeypatch.setenv("NOSKIPS_DATA_DIR", str(moved))
+    monkeypatch.setenv("NOSKIPS_COVERS_DIR", str(tmp_path / "covers"))
+    for name in ("app", "sync", "audio", "media_kind"):
+        sys.modules.pop(name, None)
+
+    import app as widget_app
+
+    widget_app = importlib.reload(widget_app)
+    assert widget_app.DATA_DIR == moved

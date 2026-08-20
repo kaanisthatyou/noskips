@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}settings — noskips{% endblock %}
+{% block title %}settings — rateify{% endblock %}
 
 {% block body %}
 <div class="card narrow">
@@ -36,7 +36,7 @@
         <div>
           <div>{{ d.name }}</div>
           <div class="muted">
-            noskips {{ d.app_version or "?" }} ·
+            rateify {{ d.app_version or "?" }} ·
             {% if d.last_seen_at %}last synced {{ d.last_seen_at|day }}{% else %}never synced{% endif %}
           </div>
         </div>
@@ -44,7 +44,7 @@
       </div>
     {% endfor %}
   {% else %}
-    <p class="muted">no devices linked. open noskips on your pc and choose
+    <p class="muted">no devices linked. open rateify on your pc and choose
       “link this pc”.</p>
   {% endif %}
 
@@ -52,7 +52,7 @@
 
   <h3>your data</h3>
   <div class="row">
-    <a class="btn small" href="/v1/export" download="noskips-export.json">export everything</a>
+    <a class="btn small" href="/v1/export" download="rateify-export.json">export everything</a>
     <button class="btn small" id="signout-btn">sign out</button>
   </div>
   <p class="muted" style="margin-top:10px">deleting your account removes every

@@ -3,7 +3,7 @@ __pycache__/
 build/
 dist/
 release/
-noskips.exe
+rateify.exe
 *.zip
 
 # personal library — your ratings stay yours

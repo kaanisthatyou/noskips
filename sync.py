@@ -29,13 +29,16 @@ from datetime import datetime, timezone
 
 import requests
 
+from server.envcompat import env
 from server.resolve import identify
 
 # The deploy, and what every downloaded exe will talk to — nobody who installs
-# it sets NOSKIPS_SERVER, so this literal is the shipped behaviour. It is the
-# generated *.vercel.app name because noskips.vercel.app was already taken; when
-# a real domain is bought, this is the line to change before building a release.
-DEFAULT_SERVER = os.environ.get("NOSKIPS_SERVER", "https://noskips-navy.vercel.app")
+# it sets RATEIFY_SERVER, so this literal is the shipped behaviour. The host is
+# still the old project name: the rename to rateify stopped at the code, because
+# renaming the Vercel project changes this hostname and the Google and Discord
+# OAuth redirect URIs are registered against it. Change the project, update both
+# consoles, then change this line — in that order, before building a release.
+DEFAULT_SERVER = env("SERVER", "https://noskips-navy.vercel.app")
 
 TICK = 2.0  # seconds between worker passes
 DRAIN_EVERY = 10  # ticks — so a batch goes out about every 20s
@@ -80,7 +83,7 @@ class SyncEngine:
         self._last_error = None
         self._last_sync = self._session.get("last_sync")
         self._http = requests.Session()
-        self._http.headers["User-Agent"] = f"noskips/{app_version}"
+        self._http.headers["User-Agent"] = f"rateify/{app_version}"
 
     # ------------------------------------------------------------ session ----
 
@@ -372,7 +375,7 @@ class SyncEngine:
     # --------------------------------------------------------------- worker ----
 
     def start(self):
-        threading.Thread(target=self._loop, daemon=True, name="noskips-sync").start()
+        threading.Thread(target=self._loop, daemon=True, name="rateify-sync").start()
         return self
 
     def _loop(self):

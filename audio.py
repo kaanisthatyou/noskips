@@ -209,7 +209,7 @@ class Visualizer:
             self._enabled = True
             if not self._opening:
                 self._opening = True
-                threading.Thread(target=self._open, daemon=True, name="noskips-audio").start()
+                threading.Thread(target=self._open, daemon=True, name="rateify-audio").start()
         elif not on and self._enabled:
             self._enabled = False
             self._close()

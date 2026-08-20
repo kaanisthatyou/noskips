@@ -21,15 +21,15 @@ VIDEO = {"artist": "Some Channel", "album": "", "title": "i built a pc in a toas
 def widget(tmp_path, monkeypatch):
     """A fresh widget app with its library in a throwaway folder.
 
-    app.py resolves DATA_DIR at import time from NOSKIPS_DATA_DIR, so the env
+    app.py resolves DATA_DIR at import time from RATEIFY_DATA_DIR, so the env
     has to be set *before* the reimport. The assertion below is not paranoia:
     an earlier version of this fixture used monkeypatch.chdir, which does
     nothing here because the path is derived from __file__ — and the tests
     cheerfully wrote into the real library instead.
     """
     data = tmp_path / "data"
-    monkeypatch.setenv("NOSKIPS_DATA_DIR", str(data))
-    monkeypatch.setenv("NOSKIPS_COVERS_DIR", str(tmp_path / "covers"))
+    monkeypatch.setenv("RATEIFY_DATA_DIR", str(data))
+    monkeypatch.setenv("RATEIFY_COVERS_DIR", str(tmp_path / "covers"))
     for name in ("app", "sync", "audio", "media_kind"):
         sys.modules.pop(name, None)
 

@@ -70,14 +70,14 @@ def create_app(config=None):
 
     @app.before_request
     def honour_the_kill_switch():
-        """NOSKIPS_READ_ONLY=1 stops every write while leaving the site fully
+        """RATEIFY_READ_ONLY=1 stops every write while leaving the site fully
         readable — the thing you want at 2am when something is going wrong and
         you'd rather freeze it than take it down."""
         from .web.admin import read_only
 
         if request.method in ("GET", "HEAD", "OPTIONS") or not read_only():
             return None
-        raise ApiError("noskips is read-only for a moment — nothing was lost", 503, "read_only")
+        raise ApiError("rateify is read-only for a moment — nothing was lost", 503, "read_only")
 
     @app.teardown_request
     def close_session(exc):
@@ -101,7 +101,7 @@ def create_app(config=None):
 
     @app.get("/healthz")
     def healthz():
-        return jsonify(ok=True, service="noskips")
+        return jsonify(ok=True, service="rateify")
 
     # ------------------------------------------------------------ routing ----
 

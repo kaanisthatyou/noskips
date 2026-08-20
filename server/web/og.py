@@ -11,13 +11,13 @@ dead profile page.
 """
 
 import io
-import os
 from pathlib import Path
 
 from flask import Response, abort, g, request
 from sqlalchemy import select
 
 from ..api.read_api import _can_read, _find_user, _stats
+from ..envcompat import env
 from ..models import Work
 from ..security import ApiError, current_user
 from . import bp
@@ -64,7 +64,7 @@ def _canvas():
     image = Image.new("RGB", (W, H), PAPER)
     draw = ImageDraw.Draw(image)
     draw.rectangle([28, 28, W - 28, H - 28], fill=CARD, outline=INK, width=5)
-    draw.text((64, 52), "noskips", font=_font("SpecialElite.ttf", 38), fill=INK)
+    draw.text((64, 52), "rateify", font=_font("SpecialElite.ttf", 38), fill=INK)
     draw.text((64, 100), "judge every song. keep receipts.",
               font=_font("Caveat.ttf", 30), fill=SOFT)
     return image, draw
@@ -162,4 +162,4 @@ def album_card(album_key):
 
 
 def enabled():
-    return AVAILABLE and not os.environ.get("NOSKIPS_NO_OG")
+    return AVAILABLE and not env("NO_OG")

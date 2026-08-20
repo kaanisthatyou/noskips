@@ -103,7 +103,7 @@ def test_read_only_stops_writes_but_not_reads(client, monkeypatch):
     signup(client)
     rate(client, 8.0)
 
-    monkeypatch.setenv("NOSKIPS_READ_ONLY", "1")
+    monkeypatch.setenv("RATEIFY_READ_ONLY", "1")
 
     assert client.get("/@kaan").status_code == 200
     assert client.get("/v1/me").status_code == 200
@@ -116,5 +116,5 @@ def test_read_only_stops_writes_but_not_reads(client, monkeypatch):
 def test_the_switch_is_off_unless_it_is_really_on(client, monkeypatch):
     signup(client)
     for value in ("", "0", "false"):
-        monkeypatch.setenv("NOSKIPS_READ_ONLY", value)
+        monkeypatch.setenv("RATEIFY_READ_ONLY", value)
         assert rate(client, 7.0).status_code == 200

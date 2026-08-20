@@ -2,7 +2,7 @@
 
 Behind an interface on purpose. Launch is on Gmail SMTP — free, no domain
 required, 500 messages a day, which is a long way past where this needs to
-scale before it earns a real domain. The day noskips.app exists, swapping to
+scale before it earns a real domain. The day rateify.app exists, swapping to
 Resend is changing one environment variable, not rewriting call sites.
 
 Configure with:
@@ -73,21 +73,21 @@ def from_env():
 
 def verification(base_url, token):
     return (
-        "noskips — confirm your address",
+        "rateify — confirm your address",
         "you're one click from a shelf.\n\n"
         f"{base_url}/verify?token={token}\n\n"
         "this link works for 24 hours. if you didn't sign up, ignore this —\n"
         "nothing happens until someone clicks it.\n\n"
-        "— noskips",
+        "— rateify",
     )
 
 
 def password_reset(base_url, token):
     return (
-        "noskips — reset your password",
+        "rateify — reset your password",
         "someone (hopefully you) asked to reset your password.\n\n"
         f"{base_url}/reset?token={token}\n\n"
         "this link works for one hour and once only. if it wasn't you,\n"
         "ignore this and nothing changes.\n\n"
-        "— noskips",
+        "— rateify",
     )

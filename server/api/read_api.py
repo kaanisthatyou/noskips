@@ -94,7 +94,7 @@ def album(album_key):
             "cover_url": next((w.cover_url for w in works if w.cover_url), None),
             "average": average,
             "rated_tracks": len(rated),
-            "certified_noskips": average is not None and average >= 9 and len(rated) >= 4,
+            "certified_rateify": average is not None and average >= 9 and len(rated) >= 4,
             "histogram": [{"score": n, "count": histogram.get(n, 0)} for n in range(1, 11)],
             "tracks": sorted(
                 (
