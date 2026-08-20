@@ -16,16 +16,21 @@ VERSION = "2.1.0"
 
 # Sizes are the real bytes of the built artifacts, shown so nobody is surprised
 # by a 30MB download on a hotel connection.
+# NB: these are the *filenames GitHub actually has*, and 2.1.0 was built and
+# uploaded while the app was still called noskips. The rename does not travel
+# backwards into a published asset, and a download button that 404s is a much
+# worse thing to ship than a stale filename. The next release, built from the
+# renamed source, is named rateify-* and this table goes back to matching it.
 ARTIFACTS = [
     {
         "kind": "installer",
-        "name": f"rateify-Setup-{VERSION}.exe",
+        "name": f"noskips-Setup-{VERSION}.exe",
         "bytes": 33_822_667,
         "blurb": "per-user installer, no admin needed",
     },
     {
         "kind": "portable",
-        "name": f"rateify-{VERSION}-portable.zip",
+        "name": f"noskips-{VERSION}-portable.zip",
         "bytes": 31_460_297,
         "blurb": "unzip and run, nothing written outside the folder",
     },
